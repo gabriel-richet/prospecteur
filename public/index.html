@@ -1,0 +1,2724 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prospecteur</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230f766e'/%3E%3Ccircle cx='14' cy='14' r='7' fill='none' stroke='white' stroke-width='3'/%3E%3Cpath d='M19 19l6 6' stroke='white' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>
+:root {
+  --bg: #f5f4f0; --surface: #ffffff; --surface-2: #faf9f6; --ink: #1b1a17; --muted: #6d6a62; --faint: #9a968c;
+  --line: #e5e2da; --line-strong: #d4d0c6;
+  --accent: #0f766e; --accent-ink: #ffffff; --accent-soft: #e3f2ef; --accent-text: #0b5e57;
+  --hot: #c2410c; --hot-soft: #fdebe1; --warm: #a16207; --warm-soft: #fbf1d6; --cool: #57534e; --cool-soft: #efede8;
+  --ok: #15803d; --ok-soft: #e4f4e8; --danger: #b91c1c; --danger-soft: #fbe5e5; --info: #1d4ed8; --info-soft: #e5ecfb;
+  --shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.06);
+  --radius: 12px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #141412; --surface: #1c1c19; --surface-2: #22221f; --ink: #eeece6; --muted: #a8a49a; --faint: #7a766d;
+    --line: #2f2e2a; --line-strong: #3d3c37;
+    --accent: #2dd4bf; --accent-ink: #062622; --accent-soft: #10332f; --accent-text: #5eead4;
+    --hot: #fb923c; --hot-soft: #3a2012; --warm: #facc15; --warm-soft: #33290b; --cool: #b8b3a8; --cool-soft: #2a2926;
+    --ok: #4ade80; --ok-soft: #12301c; --danger: #f87171; --danger-soft: #3a1515; --info: #93b4ff; --info-soft: #1a2542;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #141412; --surface: #1c1c19; --surface-2: #22221f; --ink: #eeece6; --muted: #a8a49a; --faint: #7a766d;
+  --line: #2f2e2a; --line-strong: #3d3c37;
+  --accent: #2dd4bf; --accent-ink: #062622; --accent-soft: #10332f; --accent-text: #5eead4;
+  --hot: #fb923c; --hot-soft: #3a2012; --warm: #facc15; --warm-soft: #33290b; --cool: #b8b3a8; --cool-soft: #2a2926;
+  --ok: #4ade80; --ok-soft: #12301c; --danger: #f87171; --danger-soft: #3a1515; --info: #93b4ff; --info-soft: #1a2542;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg); color: var(--ink);
+  font: 14.5px/1.5 ui-sans-serif, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+button, input, select, textarea { font: inherit; color: inherit; }
+a { color: var(--accent-text); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+[hidden] { display: none !important; }
+
+/* En-tête */
+.top {
+  position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 24px;
+  padding: 0 24px; height: 60px; background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(10px); border-bottom: 1px solid var(--line);
+}
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 16px; letter-spacing: -.01em; }
+.brand svg { width: 28px; height: 28px; }
+.tabs { display: flex; gap: 4px; }
+.tab {
+  border: 0; background: none; padding: 8px 14px; border-radius: 999px; cursor: pointer; color: var(--muted); font-weight: 550;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.tab:hover { color: var(--ink); background: var(--cool-soft); }
+.tab[aria-current="page"] { color: var(--ink); background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); }
+.compteur { background: var(--accent); color: var(--accent-ink); border-radius: 999px; font-size: 11.5px; padding: 0 7px; line-height: 18px; font-weight: 700; }
+.mode { margin-left: auto; font-size: 12.5px; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.mode .point { width: 8px; height: 8px; border-radius: 50%; background: var(--faint); }
+.mode.google .point { background: var(--ok); }
+
+main { max-width: 1320px; margin: 0 auto; padding: 28px 24px 80px; }
+
+/* Barre de recherche */
+.recherche {
+  display: grid; grid-template-columns: 1.4fr 1fr .8fr auto; gap: 12px; align-items: end;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; box-shadow: var(--shadow);
+}
+.recherche.avec-source { grid-template-columns: 1.4fr 1fr .8fr .9fr auto; }
+.champ { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.champ > span { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.input, select.input, textarea.input {
+  width: 100%; height: 42px; padding: 0 12px; border-radius: 9px; border: 1px solid var(--line-strong);
+  background: var(--surface-2); outline: none; transition: border-color .15s, box-shadow .15s;
+}
+textarea.input { height: auto; min-height: 96px; padding: 10px 12px; resize: vertical; line-height: 1.5; }
+.input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); background: var(--surface); }
+.btn {
+  height: 42px; padding: 0 16px; border-radius: 9px; border: 1px solid var(--line-strong); background: var(--surface);
+  cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 8px; white-space: nowrap;
+  text-decoration: none; color: var(--ink); transition: background .15s, border-color .15s, transform .05s;
+}
+.btn:hover { background: var(--surface-2); border-color: var(--faint); }
+.btn:active { transform: translateY(1px); }
+.btn.primaire { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.primaire:hover { filter: brightness(1.07); }
+.btn.petit { height: 32px; padding: 0 11px; font-size: 13px; border-radius: 8px; }
+.btn.fantome { border-color: transparent; background: none; }
+.btn.fantome:hover { background: var(--cool-soft); }
+.btn:disabled { opacity: .55; cursor: progress; }
+.btn svg { width: 16px; height: 16px; flex: none; }
+
+.recentes { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 2px 0; align-items: center; }
+.recentes .label { font-size: 12.5px; color: var(--faint); margin-right: 2px; }
+.puce {
+  display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--surface);
+  border-radius: 999px; padding: 4px 6px 4px 12px; font-size: 13px; cursor: pointer; color: var(--ink);
+}
+.puce:hover { border-color: var(--line-strong); }
+.puce.active { border-color: var(--accent); background: var(--accent-soft); }
+.puce small { color: var(--muted); }
+.puce .x { border: 0; background: none; cursor: pointer; color: var(--faint); width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; }
+.puce .x:hover { background: var(--cool-soft); color: var(--ink); }
+
+/* Progression */
+.progression { margin-top: 20px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 20px; }
+.barre { height: 8px; background: var(--cool-soft); border-radius: 99px; overflow: hidden; }
+.barre > div { height: 100%; width: 0; background: var(--accent); border-radius: 99px; transition: width .35s ease; }
+.progression p { margin: 10px 0 0; color: var(--muted); font-size: 13.5px; display: flex; justify-content: space-between; gap: 12px; }
+
+.alerte { margin-top: 16px; padding: 12px 16px; border-radius: 10px; background: var(--warm-soft); color: var(--ink); border: 1px solid color-mix(in srgb, var(--warm) 30%, transparent); font-size: 13.5px; }
+.alerte.erreur { background: var(--danger-soft); border-color: color-mix(in srgb, var(--danger) 30%, transparent); }
+
+/* Accueil vide */
+.accueil { margin-top: 28px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.etape { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; }
+.etape b { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--accent-soft); color: var(--accent-text); margin-bottom: 10px; }
+.etape h3 { margin: 0 0 6px; font-size: 15px; }
+.etape p { margin: 0; color: var(--muted); font-size: 13.5px; }
+
+/* Résultats */
+.entete-resultats { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin: 30px 2px 14px; flex-wrap: wrap; }
+.entete-resultats h2 { margin: 0; font-size: 22px; letter-spacing: -.02em; }
+.entete-resultats .date { color: var(--faint); font-size: 13px; }
+.stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; text-align: left; cursor: pointer; }
+.stat:hover { border-color: var(--line-strong); }
+.stat .v { font-size: 26px; font-weight: 700; letter-spacing: -.02em; font-variant-numeric: tabular-nums; line-height: 1.2; }
+.stat .l { font-size: 12.5px; color: var(--muted); }
+.stat.accent .v { color: var(--accent-text); }
+.stat.chaud .v { color: var(--hot); }
+
+.filtres { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 18px 0 12px; }
+.segment { display: inline-flex; background: var(--cool-soft); border-radius: 10px; padding: 3px; gap: 2px; }
+.segment button { border: 0; background: none; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-weight: 550; color: var(--muted); font-size: 13.5px; white-space: nowrap; }
+.segment button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+.filtres .input { height: 36px; width: auto; min-width: 170px; font-size: 13.5px; }
+.filtres .recherche-texte { flex: 1; min-width: 200px; }
+.filtres .droite { margin-left: auto; display: flex; gap: 8px; }
+
+.tableau { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+table { width: 100%; border-collapse: collapse; }
+thead th {
+  text-align: left; font-size: 11.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--faint); font-weight: 650;
+  padding: 11px 14px; background: var(--surface-2); border-bottom: 1px solid var(--line); white-space: nowrap;
+}
+tbody tr { cursor: pointer; transition: background .1s; }
+tbody tr:hover { background: var(--surface-2); }
+tbody tr.ouvert { background: var(--accent-soft); }
+tbody td { padding: 12px 14px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+tbody tr:last-child td { border-bottom: 0; }
+.nom { font-weight: 650; }
+.sous { display: block; color: var(--muted); font-size: 12.5px; margin-top: 1px; }
+.adr { color: var(--muted); font-size: 13px; max-width: 260px; }
+.tel { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.tel a { color: var(--ink); text-decoration: none; font-weight: 550; }
+.tel a:hover { color: var(--accent-text); text-decoration: underline; }
+.vide { color: var(--faint); }
+.mel { text-decoration: none; color: var(--accent-text); font-size: 15px; }
+.vide-tableau { padding: 48px 20px; text-align: center; color: var(--muted); }
+.plus { display: block; margin: 12px auto 0; }
+
+.prio { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 7px; font-weight: 750; font-size: 13px; }
+.prio-A { background: var(--hot-soft); color: var(--hot); }
+.prio-B { background: var(--warm-soft); color: var(--warm); }
+.prio-C { background: var(--cool-soft); color: var(--cool); }
+.prio-Z { background: var(--cool-soft); color: var(--faint); }
+
+.badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 999px; font-size: 12.5px; font-weight: 600; white-space: nowrap; }
+.badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.b-sans { background: var(--accent-soft); color: var(--accent-text); }
+.b-reseaux { background: var(--info-soft); color: var(--info); }
+.b-verifier { background: var(--warm-soft); color: var(--warm); }
+.b-site { background: var(--cool-soft); color: var(--cool); }
+.s-a-contacter { background: var(--info-soft); color: var(--info); }
+.s-appele { background: var(--warm-soft); color: var(--warm); }
+.s-a-rappeler { background: var(--hot-soft); color: var(--hot); }
+.s-rdv { background: var(--accent-soft); color: var(--accent-text); }
+.s-signe { background: var(--ok-soft); color: var(--ok); }
+.s-refus { background: var(--cool-soft); color: var(--faint); }
+/* Onglet Emails : code couleur des lignes (barre à gauche + pastille avec le libellé, jamais la couleur seule) */
+.c-vert { background: var(--ok-soft); color: var(--ok); }
+.c-orange { background: var(--warm-soft); color: var(--warm); }
+.c-bleu { background: var(--info-soft); color: var(--info); }
+.c-rouge { background: var(--danger-soft); color: var(--danger); }
+.c-gris { background: var(--cool-soft); color: var(--cool); }
+tr.l-vert > td:first-child { box-shadow: inset 4px 0 0 var(--ok); }
+tr.l-orange > td:first-child { box-shadow: inset 4px 0 0 var(--warm); }
+tr.l-bleu > td:first-child { box-shadow: inset 4px 0 0 var(--info); }
+tr.l-rouge > td:first-child { box-shadow: inset 4px 0 0 var(--danger); }
+tr.l-gris > td:first-child { box-shadow: inset 4px 0 0 var(--line-strong); }
+.legende { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; margin: 10px 0 0; font-size: 12.5px; color: var(--muted); }
+.note-google { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.note-google b { color: var(--warm); }
+.relance-due { color: var(--hot); font-weight: 650; font-size: 12px; display: block; }
+
+/* Fiche prospect (panneau latéral) */
+.voile { position: fixed; inset: 0; background: rgba(15, 14, 12, .32); z-index: 40; animation: apparaitre .15s; }
+.fiche {
+  position: fixed; top: 0; right: 0; bottom: 0; width: min(560px, 100vw); background: var(--surface); z-index: 50;
+  box-shadow: -12px 0 40px rgba(0,0,0,.16); display: flex; flex-direction: column; animation: glisser .2s ease-out;
+}
+@keyframes glisser { from { transform: translateX(24px); opacity: 0; } }
+@keyframes apparaitre { from { opacity: 0; } }
+.fiche-tete { padding: 20px 22px 14px; border-bottom: 1px solid var(--line); display: flex; gap: 14px; align-items: flex-start; }
+.fiche-tete h2 { margin: 0; font-size: 20px; letter-spacing: -.02em; line-height: 1.25; }
+.fiche-tete .sous { font-size: 13px; margin-top: 4px; }
+.fiche-tete .fermer { margin-left: auto; flex: none; }
+.fiche-corps { overflow-y: auto; padding: 18px 22px 40px; flex: 1; }
+.liens { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+.bloc { border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 14px; }
+.bloc h3 { margin: 0 0 10px; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--faint); font-weight: 700; }
+.site-etat { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.site-etat .detail { color: var(--muted); font-size: 13px; width: 100%; word-break: break-all; }
+.choix { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.choix .btn[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-text); }
+.infos { display: grid; grid-template-columns: 110px 1fr; gap: 8px 12px; font-size: 13.5px; margin: 0; }
+.infos dt { color: var(--muted); }
+.infos dd { margin: 0; min-width: 0; word-break: break-word; }
+.infos .input { height: 36px; }
+.suivi { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.suivi .plein { grid-column: 1 / -1; }
+.angle { background: var(--accent-soft); color: var(--ink); border-radius: 10px; padding: 12px 14px; font-size: 13.5px; margin: 0; }
+.onglets-texte { display: flex; gap: 4px; margin-bottom: 10px; flex-wrap: wrap; }
+.texte-pret {
+  white-space: pre-wrap; background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px;
+  padding: 14px; font: inherit; font-size: 14px; line-height: 1.6; margin: 0; max-height: 420px; overflow-y: auto;
+}
+.texte-pret .etape-script { font-weight: 700; color: var(--accent-text); font-size: 12px; letter-spacing: .04em; }
+.actions-texte { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
+details.objections summary { cursor: pointer; font-weight: 600; font-size: 13.5px; }
+details.objections dl { margin: 10px 0 0; font-size: 13.5px; }
+details.objections dt { font-weight: 650; margin-top: 10px; }
+details.objections dd { margin: 3px 0 0; color: var(--muted); }
+.enregistre { font-size: 12px; color: var(--faint); margin-left: auto; }
+
+/* Réglages */
+.reglages { display: grid; gap: 18px; max-width: 820px; }
+.carte { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px; }
+.carte h2 { margin: 0 0 4px; font-size: 17px; }
+.carte > p { margin: 0 0 16px; color: var(--muted); font-size: 13.5px; }
+.grille-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.ligne-actions { display: flex; gap: 10px; align-items: center; margin-top: 14px; flex-wrap: wrap; }
+.message-cle { font-size: 13.5px; }
+.message-cle.ok { color: var(--ok); } .message-cle.ko { color: var(--danger); }
+ol.etapes-cle { margin: 14px 0 0; padding-left: 20px; color: var(--muted); font-size: 13.5px; }
+ol.etapes-cle li { margin: 4px 0; }
+.etat-cle { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; margin-bottom: 12px; }
+/* Suivi : compte rendu de contact, rendez-vous, qualification, historique, agenda */
+.btn.large { width: 100%; }
+.form-contact { display: grid; gap: 14px; margin-top: 4px; padding: 14px; border: 1px solid var(--accent); border-radius: 10px; background: var(--accent-soft); }
+.form-contact .segment { justify-self: start; background: var(--surface); }
+.form-contact .segment button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.pastilles { display: flex; flex-wrap: wrap; gap: 6px; }
+.pastilles button { border: 1px solid var(--line-strong); background: var(--surface); border-radius: 999px; padding: 6px 12px; cursor: pointer; font-size: 13.5px; font-weight: 550; }
+.pastilles button:hover { border-color: var(--accent); }
+.pastilles button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.carte-rdv { margin-top: 14px; padding: 14px; border-radius: 10px; background: var(--accent-soft); border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent); display: grid; gap: 10px; }
+.carte-rdv.passe { background: var(--hot-soft); border-color: color-mix(in srgb, var(--hot) 35%, transparent); }
+.carte-rdv .choix { margin-top: 0; }
+.qualif { margin-top: 16px; display: grid; gap: 6px; }
+.critere { display: flex; gap: 10px; align-items: flex-start; padding: 8px 10px; border-radius: 9px; cursor: pointer; }
+.critere:hover { background: var(--surface-2); }
+.critere input { width: 18px; height: 18px; margin: 2px 0 0; accent-color: var(--accent); flex: none; }
+.critere small, .interrupteur small { display: block; color: var(--muted); font-size: 12.5px; font-weight: 400; }
+.historique { margin-top: 16px; display: grid; gap: 8px; }
+.entree { display: grid; grid-template-columns: 58px 1fr; gap: 10px; font-size: 13.5px; padding: 8px 0; border-top: 1px solid var(--line); }
+.entree .quand { color: var(--muted); font-size: 12px; line-height: 1.35; }
+.entree small { display: block; color: var(--muted); margin-top: 2px; white-space: pre-wrap; }
+.t-chaud { background: var(--hot-soft); color: var(--hot); }
+.t-tiede { background: var(--warm-soft); color: var(--warm); }
+.t-froid { background: var(--info-soft); color: var(--info); }
+.t-chaud::before, .t-tiede::before, .t-froid::before { display: none; }
+.agenda { margin: 4px 0 6px; }
+.agenda h3 { margin: 0 0 8px; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--faint); }
+.cartes-agenda { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px; }
+.carte-agenda { text-align: left; background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 10px; padding: 12px 14px; cursor: pointer; display: grid; gap: 2px; }
+.carte-agenda:hover { border-color: var(--line-strong); border-left-color: var(--accent); }
+.carte-agenda small { color: var(--accent-text); font-weight: 650; font-size: 12.5px; }
+.carte-agenda span { color: var(--muted); font-size: 12.5px; }
+.carte-agenda.jour { background: var(--accent-soft); }
+.carte-agenda.retard { border-left-color: var(--hot); } .carte-agenda.retard small { color: var(--hot); }
+.carte-agenda.relance { border-left-color: var(--warm); } .carte-agenda.relance small { color: var(--warm); }
+.interrupteur { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; cursor: pointer; }
+.interrupteur input { width: 20px; height: 20px; margin: 2px 0 0; accent-color: var(--accent); flex: none; }
+
+.raisons { margin: 0; padding-left: 18px; font-size: 13.5px; display: grid; gap: 4px; }
+
+/* Emails */
+.bloc-emails { margin-top: 26px; }
+.titre-bloc { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+.titre-bloc h3 { margin: 0; font-size: 16px; }
+.titre-bloc .droite { display: flex; gap: 8px; flex-wrap: wrap; }
+#vue-emails tbody tr { cursor: default; }
+#vue-emails tr.apercu td { background: var(--surface-2); }
+#vue-emails input[type="checkbox"] { width: 17px; height: 17px; accent-color: var(--accent); }
+
+/* Appel guidé */
+.actions-suivi { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.avis-propose { display: flex; gap: 12px; align-items: flex-start; justify-content: space-between; padding: 10px 0; border-top: 1px solid var(--line); font-size: 13.5px; }
+.avis-propose strong { color: var(--warm); } .avis-propose small { color: var(--faint); }
+.avis-propose .btn { flex: none; }
+.appel { position: fixed; inset: 0; z-index: 70; background: rgba(15, 14, 12, .55); display: grid; place-items: center; padding: 20px; animation: apparaitre .15s; }
+.appel-boite { width: min(1080px, 100%); height: min(760px, 100%); background: var(--surface); border-radius: 16px; box-shadow: 0 24px 80px rgba(0,0,0,.35); display: flex; flex-direction: column; overflow: hidden; }
+.appel-tete { display: flex; align-items: center; gap: 14px; padding: 14px 20px; border-bottom: 1px solid var(--line); }
+.appel-tete small { color: var(--accent-text); font-weight: 700; font-size: 11.5px; text-transform: uppercase; letter-spacing: .05em; }
+.appel-tete h2 { margin: 0; font-size: 19px; letter-spacing: -.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.appel-tete > div { flex: 1; }
+.chrono { font-variant-numeric: tabular-nums; color: var(--muted); font-weight: 600; min-width: 44px; text-align: right; }
+.appel-corps { flex: 1; display: grid; grid-template-columns: 1fr 300px; min-height: 0; }
+.appel-corps main { padding: 18px 22px 22px; overflow-y: auto; }
+.appel-corps aside { border-left: 1px solid var(--line); background: var(--surface-2); padding: 18px; overflow-y: auto; display: grid; gap: 14px; align-content: start; }
+.appel-corps h3 { margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--faint); }
+.appel-corps main h3 { margin: 20px 0 10px; }
+.appel-corps aside .infos { grid-template-columns: 76px 1fr; font-size: 13px; }
+.fil { display: flex; flex-wrap: wrap; gap: 4px 6px; font-size: 12px; color: var(--faint); margin-bottom: 12px; }
+.fil i { font-style: normal; } .fil .ici { color: var(--ink); font-weight: 650; }
+.a-dire { background: var(--accent-soft); border-radius: 14px; padding: 18px 20px; border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent); }
+.a-dire > small { color: var(--accent-text); font-weight: 700; font-size: 11.5px; text-transform: uppercase; letter-spacing: .05em; }
+.a-dire p { margin: 10px 0 0; font-size: 19px; line-height: 1.5; letter-spacing: -.005em; }
+.a-dire.fin-refus, .a-dire.fin-pas-de-reponse { background: var(--cool-soft); border-color: var(--line-strong); }
+.a-dire.fin-refus > small, .a-dire.fin-pas-de-reponse > small { color: var(--muted); }
+.conseil { margin-top: 14px; padding-top: 12px; border-top: 1px dashed color-mix(in srgb, var(--accent) 35%, transparent); color: var(--muted); font-size: 13.5px; }
+.reponses { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px; }
+.reponse { display: flex; align-items: center; gap: 10px; text-align: left; padding: 11px 12px; border-radius: 10px; border: 1px solid var(--line-strong); background: var(--surface); cursor: pointer; font-weight: 550; font-size: 14px; }
+.reponse:hover { border-color: var(--accent); background: var(--accent-soft); }
+.reponse kbd { flex: none; width: 22px; height: 22px; display: grid; place-items: center; border-radius: 6px; background: var(--cool-soft); color: var(--muted); font: 600 12px ui-monospace, monospace; }
+.reponse.ok { border-color: color-mix(in srgb, var(--ok) 50%, transparent); } .reponse.ok kbd { background: var(--ok-soft); color: var(--ok); }
+.reponse.non kbd { background: var(--danger-soft); color: var(--danger); }
+.bilan { margin-top: 16px; display: grid; gap: 6px; justify-items: start; font-size: 14px; color: var(--muted); }
+.bilan strong { color: var(--ink); font-size: 16px; } .bilan .btn { margin-top: 8px; }
+.appel-bas { display: flex; gap: 8px; margin-top: 22px; }
+.avis-cite { background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--warm); border-radius: 8px; padding: 10px 12px; font-size: 13.5px; font-style: italic; }
+.avis-cite small { display: block; font-style: normal; color: var(--faint); margin-top: 4px; }
+.bilan-appels { display: flex; flex-wrap: wrap; gap: 8px 22px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 16px; font-size: 13.5px; color: var(--muted); }
+.bilan-appels strong { color: var(--ink); font-size: 16px; }
+@media (max-width: 860px) {
+  .appel { padding: 0; } .appel-boite { height: 100%; border-radius: 0; }
+  .appel-corps { grid-template-columns: 1fr; overflow-y: auto; } .appel-corps main, .appel-corps aside { overflow: visible; }
+  .appel-corps aside { border-left: 0; border-top: 1px solid var(--line); }
+  .a-dire p { font-size: 17px; } .actions-suivi { grid-template-columns: 1fr; }
+}
+
+.guide-cle { margin-top: 18px; border-top: 1px solid var(--line); padding-top: 14px; }
+.guide-cle summary { cursor: pointer; font-weight: 650; }
+ol.etapes-cle li { margin: 8px 0; line-height: 1.55; }
+.jauge { height: 10px; background: var(--cool-soft); border-radius: 99px; overflow: hidden; }
+.jauge > div { height: 100%; background: var(--accent); border-radius: 99px; width: 0; transition: width .3s; }
+.jauge > div.alerte-jauge { background: var(--hot); }
+
+.toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px); opacity: 0; z-index: 60;
+  background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 10px; font-size: 13.5px; font-weight: 550;
+  transition: opacity .2s, transform .2s; pointer-events: none;
+}
+.toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* Téléphone / petite largeur */
+@media (max-width: 1000px) {
+  .recherche, .recherche.avec-source { grid-template-columns: 1fr 1fr; }
+  .recherche .btn.primaire { grid-column: 1 / -1; }
+  .stats { grid-template-columns: repeat(3, 1fr); }
+  .adr-col { display: none; }
+}
+@media (max-width: 700px) {
+  .top { padding: 0 16px; gap: 10px; height: auto; min-height: 56px; flex-wrap: wrap; padding-top: 8px; padding-bottom: 8px; }
+  .mode { display: none; }
+  .tab { padding: 7px 10px; font-size: 13.5px; }
+  main { padding: 18px 16px 60px; }
+  .recherche, .recherche.avec-source { grid-template-columns: 1fr; }
+  .accueil { grid-template-columns: 1fr; }
+  .stats { grid-template-columns: repeat(2, 1fr); }
+  .filtres .droite { margin-left: 0; }
+  .grille-2, .suivi { grid-template-columns: 1fr; }
+  thead { display: none; }
+  table, tbody, tr, td { display: block; }
+  tbody tr { padding: 12px 14px; border-bottom: 1px solid var(--line); display: grid; grid-template-columns: 34px 1fr; gap: 4px 10px; }
+  tbody td { padding: 0; border: 0; }
+  tbody td:first-child { grid-row: 1 / span 6; }
+  tbody td:not(:first-child) { grid-column: 2; }
+  tbody td:has(> .vide:only-child) { display: none; }
+  .adr-col { display: block; }
+}
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="var(--accent)"/><circle cx="14" cy="14" r="7" fill="none" stroke="var(--accent-ink)" stroke-width="3"/><path d="M19 19l6 6" stroke="var(--accent-ink)" stroke-width="3" stroke-linecap="round"/></svg>
+    Prospecteur
+  </div>
+  <nav class="tabs" aria-label="Navigation">
+    <button class="tab" data-vue="recherche" aria-current="page">Rechercher</button>
+    <button class="tab" data-vue="pipeline">Mes prospects <span class="compteur" id="nbSuivis" hidden></span></button>
+    <button class="tab" data-vue="emails">Emails</button>
+    <button class="tab" data-vue="profil">Profil</button>
+    <button class="tab" data-vue="reglages">Réglages</button>
+  </nav>
+  <span class="mode" id="modeBadge"><span class="point"></span><span></span></span>
+</header>
+
+<main>
+  <!-- RECHERCHE -->
+  <section id="vue-recherche">
+    <form class="recherche" id="formRecherche" autocomplete="off">
+      <label class="champ"><span>Ville ou code postal</span>
+        <input class="input" id="ville" list="villes" placeholder="ex. Champs-sur-Marne, 77420, Lausanne…" required>
+        <datalist id="villes"></datalist>
+      </label>
+      <label class="champ"><span>Métier</span>
+        <select class="input" id="metier"><option value="tous">Tous les métiers</option></select>
+      </label>
+      <label class="champ"><span>Zone</span>
+        <select class="input" id="rayon">
+          <option value="">La ville uniquement</option>
+          <option value="2">Ville + 2 km</option>
+          <option value="5">Ville + 5 km</option>
+          <option value="10">Ville + 10 km</option>
+          <option value="20">Ville + 20 km</option>
+        </select>
+      </label>
+      <label class="champ" id="champSource" hidden><span>Source</span>
+        <select class="input" id="source">
+          <option value="google">Complète (+ Google Maps)</option>
+          <option value="gratuit">Gratuite (sans Google)</option>
+        </select>
+      </label>
+      <button class="btn primaire" id="lancer" type="submit">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        Lancer la recherche
+      </button>
+    </form>
+    <div class="recentes" id="recentes" hidden></div>
+
+    <div class="progression" id="progression" hidden>
+      <div class="barre"><div></div></div>
+      <p><span id="progressionTexte">Démarrage…</span><span id="progressionPourcent">0 %</span></p>
+    </div>
+    <div id="alertes"></div>
+
+    <div class="accueil" id="accueil">
+      <div class="etape"><b>1</b><h3>Choisis une ville</h3><p>Tape son nom ou son code postal. Laisse « Tous les métiers » pour avoir la liste complète des commerces et artisans.</p></div>
+      <div class="etape"><b>2</b><h3>Repère ceux sans site</h3><p>L'outil vérifie chaque entreprise et les classe : <strong>A</strong> = à appeler en premier.</p></div>
+      <div class="etape"><b>3</b><h3>Appelle avec le script</h3><p>Clique sur une entreprise : téléphone, dirigeant, script d'appel et email déjà personnalisés. Suis tes appels dans « Mes prospects ».</p></div>
+    </div>
+
+    <div id="resultats" hidden>
+      <div class="entete-resultats">
+        <h2 id="titreResultats"></h2>
+        <span class="date" id="dateResultats"></span>
+      </div>
+      <div class="stats" id="stats"></div>
+      <div class="filtres">
+        <div class="segment" id="filtreSite" role="group" aria-label="Présence web">
+          <button type="button" data-v="sans" aria-pressed="true">Sans site</button>
+          <button type="button" data-v="tous" aria-pressed="false">Toutes</button>
+          <button type="button" data-v="avec" aria-pressed="false">Avec site</button>
+        </div>
+        <div class="segment" id="filtrePrio" role="group" aria-label="Priorité">
+          <button type="button" data-v="" aria-pressed="true">Toutes priorités</button>
+          <button type="button" data-v="A" aria-pressed="false">A</button>
+          <button type="button" data-v="B" aria-pressed="false">B</button>
+          <button type="button" data-v="C" aria-pressed="false">C</button>
+        </div>
+        <select class="input" id="filtreCategorie" aria-label="Catégorie"></select>
+        <input class="input recherche-texte" id="filtreTexte" type="search" placeholder="Filtrer par nom, rue, dirigeant…" aria-label="Filtrer">
+        <div class="droite">
+          <button class="btn petit" id="exporter" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v3h16v-3"/></svg>
+            Excel
+          </button>
+        </div>
+      </div>
+      <div class="tableau" id="tableauRecherche"></div>
+    </div>
+  </section>
+
+  <!-- MES PROSPECTS -->
+  <section id="vue-pipeline" hidden>
+    <div class="entete-resultats" style="margin-top:0">
+      <h2>Mes prospects</h2>
+      <span class="date">Toutes les entreprises auxquelles tu as donné un statut, toutes recherches confondues.</span>
+    </div>
+    <div id="agenda"></div>
+    <div class="filtres">
+      <div class="segment" id="filtreStatut" role="group" aria-label="Statut"></div>
+      <input class="input recherche-texte" id="filtreTextePipeline" type="search" placeholder="Filtrer…" aria-label="Filtrer">
+      <div class="droite"><button class="btn petit" id="exporterPipeline" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v3h16v-3"/></svg>
+        Excel</button></div>
+    </div>
+    <div class="tableau" id="tableauPipeline"></div>
+  </section>
+
+  <!-- EMAILS -->
+  <section id="vue-emails" hidden></section>
+
+  <!-- PROFIL -->
+  <section id="vue-profil" hidden>
+    <div class="reglages">
+      <form class="carte" id="formProfil">
+        <h2>Ton profil</h2>
+        <p>Ces informations remplissent automatiquement tes scripts d'appel, emails et SMS.</p>
+        <div class="grille-2">
+          <label class="champ"><span>Prénom</span><input class="input" name="prenom" placeholder="ex. Gabriel"></label>
+          <label class="champ"><span>Nom</span><input class="input" name="nom"></label>
+          <label class="champ"><span>Téléphone</span><input class="input" name="telephone" placeholder="06 …"></label>
+          <label class="champ"><span>Email</span><input class="input" name="email" type="email"></label>
+          <label class="champ"><span>Ville où tu travailles</span><input class="input" name="ville" placeholder="ex. Champs-sur-Marne"></label>
+          <label class="champ"><span>Ton site / portfolio</span><input class="input" name="site" placeholder="ex. monsite.fr"></label>
+          <label class="champ"><span>Prix de départ d'un site (pour le script)</span><input class="input" name="prixDepart" placeholder="ex. 490 €"></label>
+          <label class="champ" style="grid-column:1 / -1"><span>Une réalisation à citer dans tes emails (facultatif, vraie uniquement)</span><input class="input" name="reference" placeholder="ex. Je viens de réaliser le site du garage X, à Champs-sur-Marne"></label>
+        </div>
+        <div class="ligne-actions"><button class="btn primaire" type="submit">Enregistrer</button></div>
+      </form>
+    </div>
+  </section>
+
+  <!-- RÉGLAGES -->
+  <section id="vue-reglages" hidden>
+    <div class="reglages">
+
+      <div class="carte">
+        <h2>Envoi d'emails <span style="font-weight:500;color:var(--muted);font-size:14px">(facultatif)</span></h2>
+        <p>Pour que l'outil envoie lui-même les emails et les relances de l'onglet « Emails », depuis <strong>ta</strong> boîte mail. Sans ce réglage, l'onglet fonctionne quand même : chaque email s'ouvre dans ta messagerie et c'est toi qui l'envoies.</p>
+        <div class="etat-cle" id="etatSmtp"></div>
+        <div class="grille-2">
+          <label class="champ"><span>Ta messagerie</span>
+            <select class="input" id="smtpFournisseur">
+              <option value="smtp.gmail.com|465">Gmail</option>
+              <option value="smtp.office365.com|587">Outlook / Microsoft 365</option>
+              <option value="ssl0.ovh.net|465">OVH</option>
+              <option value="smtp.ionos.fr|465">IONOS</option>
+              <option value="">Autre (je remplis le serveur)</option>
+            </select></label>
+          <label class="champ"><span>Nom affiché au destinataire</span><input class="input" id="smtpExpediteur" placeholder="ex. Gabriel Dupont"></label>
+          <label class="champ"><span>Ton adresse email</span><input class="input" id="smtpUtilisateur" type="email" autocomplete="off" placeholder="toi@exemple.fr"></label>
+          <label class="champ"><span>Mot de passe d'application</span><input class="input" id="smtpMotDePasse" type="password" autocomplete="new-password" placeholder="Laisse vide pour garder l'actuel"></label>
+          <label class="champ" id="champSmtpHote" hidden><span>Serveur d'envoi (SMTP)</span><input class="input" id="smtpHote" placeholder="smtp.exemple.fr"></label>
+          <label class="champ" id="champSmtpPort" hidden><span>Port</span><input class="input" id="smtpPort" type="number" placeholder="465"></label>
+          <label class="champ"><span>Emails par jour au maximum</span><input class="input" id="emailsParJour" type="number" min="1" max="50"></label>
+          <label class="interrupteur" style="grid-column:1 / -1"><input type="checkbox" id="monteeProgressive" checked>
+            <span><strong>Montée progressive</strong><small>Conseillé : 5 emails par jour au début, puis 5 de plus tous les trois jours d'envoi, jusqu'à ton maximum. Une boîte qui écrit d'un coup à 25 inconnus se fait classer comme spam.</small></span></label>
+        </div>
+        <div class="ligne-actions">
+          <button class="btn primaire" id="enregistrerSmtp" type="button">Enregistrer et m'envoyer un test</button>
+          <button class="btn" id="supprimerSmtp" type="button" hidden>Débrancher ma boîte mail</button>
+          <span class="message-cle" id="messageSmtp"></span>
+        </div>
+        <details class="guide-cle" id="guideSmtp">
+          <summary>Avec Gmail : créer un « mot de passe d'application » (5 minutes)</summary>
+          <ol class="etapes-cle">
+            <li>Active la <a href="https://myaccount.google.com/signinoptions/two-step-verification" target="_blank" rel="noopener"><strong>validation en deux étapes</strong></a> sur ton compte Google (obligatoire pour la suite).</li>
+            <li>Ouvre <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener"><strong>myaccount.google.com/apppasswords</strong></a>, nomme-le « Prospecteur » et clique sur « Créer ».</li>
+            <li>Google affiche un code de 16 lettres : colle-le dans « Mot de passe d'application » ci-dessus. Ce n'est pas ton mot de passe Gmail, et tu peux le supprimer à tout moment depuis la même page.</li>
+          </ol>
+          <p class="sous" style="margin:8px 0 0"><strong>Conseils :</strong> reste à 15 ou 20 emails par jour, sinon ta boîte risque d'être classée comme spam. Une adresse à ton nom de domaine (contact@tonnom.fr) inspire plus confiance qu'une adresse @gmail.com.
+            Le mot de passe est gardé uniquement sur ce PC, dans <code>donnees/config.json</code>.</p>
+        </details>
+      </div>
+
+      <div class="carte">
+        <h2>Clé Google Maps <span style="font-weight:500;color:var(--muted);font-size:14px">(facultatif, recommandé)</span></h2>
+        <p>Sans clé, l'outil utilise le registre officiel et OpenStreetMap : gratuit, mais il manque des téléphones et certains sites ne sont pas détectés.
+          Avec une clé, il lit directement les <strong>fiches Google Maps</strong> : téléphone, note, nombre d'avis et site déclaré, pour chaque entreprise.</p>
+        <div class="etat-cle" id="etatCle"></div>
+        <div class="champ"><span>Coller la clé API</span><input class="input" id="cleGoogle" placeholder="AIza…" spellcheck="false"></div>
+        <div class="ligne-actions">
+          <button class="btn primaire" id="enregistrerCle" type="button">Enregistrer et tester</button>
+          <button class="btn" id="supprimerCle" type="button" hidden>Supprimer la clé</button>
+          <span class="message-cle" id="messageCle"></span>
+        </div>
+        <details class="guide-cle" id="guideCle" open>
+          <summary>Obtenir ta clé en 10 minutes (clique sur chaque lien, dans l'ordre)</summary>
+          <ol class="etapes-cle">
+            <li><a href="https://console.cloud.google.com/projectcreate" target="_blank" rel="noopener"><strong>Créer un projet</strong></a> : connecte-toi avec ton compte Google, nomme-le « Prospecteur », puis « Créer ».</li>
+            <li><a href="https://console.cloud.google.com/billing/linkedaccount" target="_blank" rel="noopener"><strong>Activer la facturation</strong></a> : ajoute ta carte (obligatoire pour Google, même pour la partie gratuite ; l'outil s'arrête avant la limite, voir plus bas).</li>
+            <li><a href="https://console.cloud.google.com/apis/library/places.googleapis.com" target="_blank" rel="noopener"><strong>Activer « Places API (New) »</strong></a> : bouton « Activer ».</li>
+            <li><a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener"><strong>Créer la clé</strong></a> : « + Créer des identifiants » → « Clé API ». Puis « Modifier la clé » → Restrictions d'API → coche <strong>Places API (New)</strong> → Enregistrer.</li>
+            <li>Copie la clé (elle commence par « AIza ») et colle-la dans le champ ci-dessus, puis « Enregistrer et tester ».</li>
+            <li><em>Sécurité en plus (conseillé) :</em> <a href="https://console.cloud.google.com/apis/api/places.googleapis.com/quotas" target="_blank" rel="noopener">Quotas de Places API</a> → limite « Text Search » à <strong>40 requêtes par jour</strong>. Même en cas de bug, tu ne pourras jamais payer.</li>
+          </ol>
+        </details>
+      </div>
+
+      <div class="carte">
+        <h2>Utilisation de Google ce mois-ci</h2>
+        <p>Google offre environ <strong>1 000 requêtes par mois</strong> pour ces informations, puis facture environ 35 $ les 1 000. L'outil compte chaque requête et <strong>s'arrête avant la limite</strong> que tu fixes ici.
+          Un métier dans une ville ≈ 1 à 5 requêtes ; une ville entière, tous métiers ≈ 40 à 150 requêtes selon sa taille.</p>
+        <div class="jauge"><div id="jaugeGoogle"></div></div>
+        <p class="sous" id="texteJauge" style="margin:8px 0 0"></p>
+        <div class="ligne-actions">
+          <label class="champ" style="max-width:220px"><span>Limite par mois</span><input class="input" id="limiteGoogle" type="number" min="0" step="50"></label>
+          <button class="btn" id="enregistrerLimite" type="button" style="align-self:flex-end">Enregistrer la limite</button>
+        </div>
+      </div>
+
+      <div class="carte">
+        <h2>Script IA <span style="font-weight:500;color:var(--muted);font-size:14px">(facultatif, payant à l'usage)</span></h2>
+        <p>Dans la fiche d'un prospect, l'onglet « ✨ Script IA » fait rédiger par Claude un script d'appel sur mesure : accroche, questions propres au métier, objections probables. Il s'appuie sur la fiche, l'avis client cité, tes notes et tes appels précédents, et n'invente aucun fait.
+          Il faut une <strong>clé Anthropic</strong>, à part de ton abonnement Claude : tu paies seulement ce que tu utilises.</p>
+        <div class="etat-cle" id="etatCleIA"></div>
+        <div class="grille-2">
+          <label class="champ"><span>Coller la clé Anthropic</span><input class="input" id="cleAnthropic" placeholder="sk-ant-…" spellcheck="false" autocomplete="off"></label>
+          <label class="champ"><span>Modèle</span><select class="input" id="modeleIA"></select></label>
+        </div>
+        <div class="ligne-actions">
+          <button class="btn primaire" id="enregistrerCleIA" type="button">Enregistrer et tester</button>
+          <button class="btn" id="supprimerCleIA" type="button" hidden>Supprimer la clé</button>
+          <span class="message-cle" id="messageCleIA"></span>
+        </div>
+        <p class="sous" style="margin:14px 0 6px"><strong>Coût par script</strong> (ordre de grandeur) : Opus 5.5 environ 0,05 à 0,10 $ · Sonnet 5.5 environ 0,03 à 0,05 $ · Haiku 5.5 moins de 0,01 $. Le coût exact s'affiche après chaque génération.</p>
+        <div class="jauge"><div id="jaugeIA"></div></div>
+        <p class="sous" id="texteJaugeIA" style="margin:8px 0 0"></p>
+        <div class="ligne-actions">
+          <label class="champ" style="max-width:220px"><span>Plafond par mois (en $)</span><input class="input" id="limiteIA" type="number" min="0" step="1"></label>
+          <button class="btn" id="enregistrerLimiteIA" type="button" style="align-self:flex-end">Enregistrer le plafond</button>
+        </div>
+        <details class="guide-cle" id="guideCleIA">
+          <summary>Obtenir ta clé Anthropic (5 minutes)</summary>
+          <ol class="etapes-cle">
+            <li>Ouvre <a href="https://platform.claude.com/" target="_blank" rel="noopener"><strong>platform.claude.com</strong></a> et crée un compte développeur (ce n'est pas le même compte que ton abonnement Claude).</li>
+            <li>Dans <strong>Billing</strong>, ajoute un peu de crédit (5 $ suffisent pour des dizaines de scripts). Ne coche pas le rechargement automatique si tu veux garder la main.</li>
+            <li>Dans <a href="https://platform.claude.com/settings/keys" target="_blank" rel="noopener"><strong>API keys</strong></a>, clique sur « Create key », nomme-la « Prospecteur » et copie-la (elle commence par « sk-ant- »).</li>
+            <li>Colle-la dans le champ ci-dessus, puis « Enregistrer et tester ». Ne la partage avec personne.</li>
+          </ol>
+        </details>
+      </div>
+
+      <div class="carte">
+        <h2>Rappels sur ce PC</h2>
+        <p>Quand tu notes un rendez-vous ou une date de relance, Windows t'affiche une notification en bas à droite de l'écran :
+          <strong>la veille à 17 h, le matin, 1 h avant et 15 min avant</strong> chaque rendez-vous, et <strong>chaque matin</strong> s'il y a des prospects à relancer.
+          Un clic sur la notification ouvre la fiche du prospect.</p>
+        <label class="interrupteur">
+          <input type="checkbox" id="rappelsDemarrage">
+          <span><strong>Démarrer le Prospecteur avec Windows</strong>
+            <small>Conseillé : il tourne discrètement en arrière-plan (sans fenêtre), pour que les rappels arrivent même si tu n'as pas ouvert l'outil.</small></span>
+        </label>
+        <div class="ligne-actions">
+          <button class="btn" id="testerRappel" type="button">Envoyer une notification de test</button>
+          <button class="btn fantome" id="arreterOutil" type="button">Arrêter l'outil</button>
+          <span class="message-cle" id="messageRappel"></span>
+        </div>
+        <p class="sous" style="margin:10px 0 0">Tu ne vois pas la notification de test ? Vérifie que le mode « Ne pas déranger » de Windows est désactivé (icône cloche, en bas à droite).</p>
+      </div>
+
+      <div class="carte">
+        <h2>Tes données</h2>
+        <p style="margin:0">Tout est enregistré sur ton ordinateur, dans le dossier <code>outil-prospection/donnees</code> (recherches, statuts, notes, réglages). Rien n'est envoyé ailleurs, et l'outil n'est accessible que depuis ce PC.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div class="voile" id="voile" hidden></div>
+<aside class="fiche" id="fiche" hidden aria-modal="true" role="dialog"></aside>
+<div class="appel" id="appel" hidden role="dialog" aria-modal="true" aria-label="Appel guidé"></div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+// ---------------------------------------------------------------------------------------------
+// État
+
+const STATUTS = [
+  { v: 'a-contacter', l: 'À contacter' },
+  { v: 'appele', l: 'Contacté' },
+  { v: 'a-rappeler', l: 'À rappeler' },
+  { v: 'rdv', l: 'RDV pris' },
+  { v: 'signe', l: 'Signé' },
+  { v: 'refus', l: 'Refus' },
+];
+const LABEL_STATUT = Object.fromEntries(STATUTS.map((s) => [s.v, s.l]));
+
+// Compte rendu d'un contact : chaque résultat met à jour le statut et propose une relance.
+const TYPES_CONTACT = [{ v: 'appel', l: '📞 Appel' }, { v: 'visite', l: '🚶 Visite' }, { v: 'message', l: '✉️ Email / SMS' }];
+const RESULTATS = [
+  { v: 'pas-de-reponse', l: 'Pas de réponse', statut: 'appele', relanceJours: 2 },
+  { v: 'repondeur', l: 'Message laissé', statut: 'appele', relanceJours: 3 },
+  { v: 'a-rappeler', l: 'À rappeler', statut: 'a-rappeler', relanceJours: 2 },
+  { v: 'interesse', l: 'Intéressé, à relancer', statut: 'a-rappeler', relanceJours: 4 },
+  { v: 'rdv', l: '📅 RDV pris', statut: 'rdv' },
+  { v: 'refus', l: 'Pas intéressé', statut: 'refus' },
+  { v: 'signe', l: 'Signé 🎉', statut: 'signe' },
+];
+const LABEL_RESULTAT = { ...Object.fromEntries(RESULTATS.map((r) => [r.v, r.l])), email: 'Email envoyé' };
+const LABEL_TYPE = Object.fromEntries(TYPES_CONTACT.map((t) => [t.v, t.l]));
+
+// Qualification : 4 questions simples. 3 ou 4 « oui » = prospect chaud.
+const CRITERES = [
+  { v: 'decideur', l: 'J\'ai parlé au décideur', aide: 'Le patron ou la personne qui signe, pas un employé.' },
+  { v: 'besoin', l: 'Il reconnaît le besoin', aide: 'Il admet qu\'un site l\'aiderait : plus de clients, moins d\'appels…' },
+  { v: 'budget', l: 'Le prix ne le bloque pas', aide: 'Il a demandé le tarif, ou n\'a pas tiqué en l\'entendant.' },
+  { v: 'delai', l: 'Il veut avancer bientôt', aide: 'Il parle d\'une échéance : « avant l\'été », « dès que possible »…' },
+];
+function temperature(l) {
+  const n = CRITERES.filter((c) => l.qualif?.[c.v]).length;
+  if (n >= 3) return { v: 'chaud', l: '🔥 Chaud', n };
+  if (n >= 1) return { v: 'tiede', l: 'Tiède', n };
+  return l.historique?.length ? { v: 'froid', l: 'Froid', n } : null;
+}
+const badgeTemperature = (l) => { const t = temperature(l); return t ? `<span class="badge t-${t.v}">${t.l}</span>` : ''; };
+
+const dateLongue = (iso) => new Date(iso).toLocaleString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
+const jourLocal = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const dansJours = (n) => jourLocal(new Date(Date.now() + n * 864e5));
+const PAR_PAGE = 150;
+
+const etat = {
+  config: { profil: {}, aCleGoogle: false },
+  prospects: {},
+  recherche: null,
+  recentes: [],
+  vue: 'recherche',
+  filtres: { site: 'sans', prio: '', categorie: '', texte: '' },
+  filtresPipeline: { statut: 'tous', texte: '' },
+  limite: PAR_PAGE,
+  ficheId: null,
+  ongletTexte: 'appel',
+  flux: null,
+};
+
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const norm = (s) => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
+async function api(chemin, options = {}) {
+  const r = await fetch(chemin, { ...options, headers: { 'Content-Type': 'application/json', ...options.headers } });
+  const donnees = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(donnees.erreur || `Erreur ${r.status}`);
+  return donnees;
+}
+
+function toast(message) {
+  const t = $('#toast');
+  t.textContent = message;
+  t.classList.add('visible');
+  clearTimeout(toast.minuteur);
+  toast.minuteur = setTimeout(() => t.classList.remove('visible'), 1800);
+}
+
+const dateCourte = (iso) => iso ? new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : '';
+const annees = (iso) => iso ? Math.floor((Date.now() - new Date(iso)) / (365.25 * 864e5)) : 0;
+const aujourdhui = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+
+// ---------------------------------------------------------------------------------------------
+// Prospect « effectif » = résultat de recherche + ce que tu as modifié (statut, notes, téléphone, vérif du site)
+
+function siteTrouve(site) { return site?.statut === 'oui' || site?.statut === 'franchise'; }
+
+function fusion(ligne) {
+  const p = etat.prospects[ligne.id] ?? {};
+  const aUnSite = p.siteManuel ? p.siteManuel === 'oui' : siteTrouve(ligne.site);
+  return {
+    ...ligne,
+    telephone: p.telephone ?? ligne.telephone,
+    // L'adresse lue sur un site déduit du nom n'est utilisée qu'une fois ce site confirmé (« Il a un site »).
+    email: p.email ?? ligne.email ?? (p.siteManuel === 'oui' ? ligne.audit?.emailSite : '') ?? '',
+    // D'où vient l'adresse : saisie par toi, lue sur la carte, ou lue sur son site (les emails le disent au destinataire).
+    emailSource: p.email ? 'manuel' : ligne.email ? (ligne.emailSource ?? 'inconnue') : (p.siteManuel === 'oui' && ligne.audit?.emailSite ? 'site' : ''),
+    aUnSite, siteManuel: p.siteManuel ?? '',
+    statut: p.statut ?? '', notes: p.notes ?? '', relance: p.relance ?? '',
+    rdv: p.rdv?.date ? p.rdv : null, qualif: p.qualif ?? {}, historique: p.historique ?? [], avisCite: p.avisCite ?? null, scriptIA: p.scriptIA ?? null,
+    classement: p.siteManuel === 'oui' ? 'Z' : p.siteManuel === 'non' && ligne.classement === 'Z' ? 'B' : ligne.classement,
+  };
+}
+
+function badgeSite(l) {
+  if (l.siteManuel === 'non') return '<span class="badge b-sans">Pas de site ✓</span>';
+  if (l.siteManuel === 'oui') return '<span class="badge b-site">A un site ✓</span>';
+  switch (l.site?.statut) {
+    case 'oui': { // site existant : s'il a des défauts constatés, c'est un prospect pour une refonte
+      const defauts = defautsSite(l);
+      return defauts.length ? `<span class="badge b-verifier" title="${esc(defauts.map((d) => d.court).join(' · '))}">Site à refaire (${defauts.length})</span>` : '<span class="badge b-site">A un site</span>';
+    }
+    case 'franchise': return '<span class="badge b-site">Franchise</span>';
+    case 'reseaux': return `<span class="badge b-reseaux">${esc(pageReseau(l.site.url).court)}</span>`;
+    default: return '<span class="badge b-sans">Aucun site trouvé</span>';
+  }
+}
+
+// Nomme la « fausse » présence web : Facebook, Instagram, ancienne page Google, annuaire…
+function pageReseau(url) {
+  const u = String(url ?? '').toLowerCase();
+  if (/facebook|fb\.com/.test(u)) return { court: 'Facebook seulement', phrase: 'une page Facebook' };
+  if (/instagram/.test(u)) return { court: 'Instagram seulement', phrase: 'un compte Instagram' };
+  if (/business\.site|g\.page/.test(u)) return { court: 'Ancienne page Google', phrase: 'une ancienne page Google (Google a fermé ces sites en 2024)' };
+  if (/planity|treatwell/.test(u)) return { court: 'Plateforme de résa seulement', phrase: 'une page sur une plateforme de réservation' };
+  if (/pagesjaunes/.test(u)) return { court: 'Pages Jaunes seulement', phrase: 'une fiche Pages Jaunes' };
+  return { court: 'Pas de vrai site', phrase: 'une page d\'annuaire ou de réseau social' };
+}
+
+const badgeStatut =(s) => s ? `<span class="badge s-${s}">${esc(LABEL_STATUT[s])}</span>` : '<span class="vide">—</span>';
+
+// ---------------------------------------------------------------------------------------------
+// Tableau (partagé entre « Rechercher » et « Mes prospects »)
+
+function tableau(lignes, { pipeline = false } = {}) {
+  if (!lignes.length) {
+    return `<div class="vide-tableau">${pipeline
+      ? 'Aucun prospect ici. Donne un statut à une entreprise (ex. « À contacter ») depuis ses résultats de recherche pour la retrouver dans cette liste.'
+      : 'Aucune entreprise ne correspond à ces filtres.'}</div>`;
+  }
+  const visibles = lignes.slice(0, etat.limite);
+  return `<table>
+    <thead><tr>
+      <th style="width:52px">Prio.</th><th>Entreprise</th><th class="adr-col">Adresse</th><th>Téléphone</th>
+      <th>Avis Google</th><th>Site web</th><th>${pipeline ? 'Statut / relance' : 'Statut'}</th>
+    </tr></thead>
+    <tbody>${visibles.map((l) => {
+      const due = l.relance && l.relance <= aujourdhui() && !['signe', 'refus'].includes(l.statut);
+      const sous = [l.categorie, l.dirigeant?.nom ? `${l.dirigeant.prenom ?? ''} ${l.dirigeant.nom}`.trim() : ''].filter(Boolean).join(' · ');
+      return `<tr data-id="${esc(l.id)}" class="${etat.ficheId === l.id ? 'ouvert' : ''}">
+        <td><span class="prio prio-${esc(l.classement)}" title="Priorité ${esc(l.classement)}">${l.classement === 'Z' ? '–' : esc(l.classement)}</span></td>
+        <td><span class="nom">${esc(l.nom)}</span><span class="sous">${esc(sous)}</span></td>
+        <td class="adr adr-col">${esc(l.adresse)}</td>
+        <td class="tel">${l.telephone ? `<a href="tel:${esc(l.telephone.replace(/\s/g, ''))}">${esc(l.telephone)}</a>` : '<span class="vide">—</span>'}${l.email ? ` <a class="mel" href="mailto:${esc(l.email)}" title="${esc(l.email)}">✉</a>` : ''}</td>
+        <td class="note-google">${l.note ? `<b>★</b> ${esc(String(l.note).replace('.', ','))} <span class="vide">(${esc(l.avis)})</span>` : '<span class="vide">—</span>'}</td>
+        <td>${badgeSite(l)}</td>
+        <td>${badgeStatut(l.statut)} ${pipeline ? badgeTemperature(l) : ''}${
+          pipeline && l.rdv ? `<span class="sous">📅 ${esc(dateLongue(l.rdv.date))}</span>` : ''}${
+          pipeline && l.relance ? `<span class="${due ? 'relance-due' : 'sous'}">${due ? '⏰ ' : ''}Relance ${esc(dateCourte(l.relance))}</span>` : ''}</td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table>${lignes.length > etat.limite ? `<button class="btn petit plus" data-action="plus">Afficher plus (${lignes.length - etat.limite} restantes)</button>` : ''}`;
+}
+
+function brancherTableau(conteneur) {
+  conteneur.onclick = (e) => {
+    if (e.target.closest('a')) return; // clic sur le téléphone = appel direct
+    if (e.target.closest('[data-action="plus"]')) { etat.limite += PAR_PAGE; rendre(); return; }
+    const tr = e.target.closest('tr[data-id]');
+    if (tr) ouvrirFiche(tr.dataset.id);
+  };
+}
+
+// ---------------------------------------------------------------------------------------------
+// Vue Rechercher
+
+function lignesRecherche() {
+  return (etat.recherche?.lignes ?? []).map(fusion);
+}
+
+function lignesFiltrees() {
+  const f = etat.filtres;
+  const texte = norm(f.texte);
+  return lignesRecherche().filter((l) => {
+    if (f.site === 'sans' && l.aUnSite) return false;
+    if (f.site === 'avec' && !l.aUnSite) return false;
+    if (f.prio && l.classement !== f.prio) return false;
+    if (f.categorie && l.categorie !== f.categorie) return false;
+    if (texte && !norm(`${l.nom} ${l.raisonSociale} ${l.adresse} ${l.dirigeant?.prenom ?? ''} ${l.dirigeant?.nom ?? ''} ${l.categorie}`).includes(texte)) return false;
+    return true;
+  }).sort((a, b) => a.classement.localeCompare(b.classement) || (b.avis ?? 0) - (a.avis ?? 0) || (b.telephone ? 1 : 0) - (a.telephone ? 1 : 0));
+}
+
+function rendreRecherche() {
+  const r = etat.recherche;
+  $('#accueil').hidden = Boolean(r) || !$('#progression').hidden;
+  $('#resultats').hidden = !r;
+  rendreRecentes();
+  if (!r) return;
+
+  const m = r.meta;
+  $('#titreResultats').textContent = `${m.metierLabel} · ${m.zone}${m.pays && m.pays !== 'fr' ? ` (${m.paysNom})` : ''}`;
+  $('#dateResultats').textContent = `Recherche du ${new Date(m.date).toLocaleString('fr-FR', { dateStyle: 'long', timeStyle: 'short' })} · `
+    + (m.mode === 'complet'
+      ? `registre officiel + OpenStreetMap + Google Maps (${m.avecGoogle} fiches Google, ${m.requetesGoogle} requêtes)`
+      : 'registre officiel + OpenStreetMap (sans Google)');
+
+  const toutes = lignesRecherche();
+  const sans = toutes.filter((l) => !l.aUnSite);
+  const stats = [
+    { v: toutes.length, l: 'entreprises analysées', filtre: { site: 'tous', prio: '' } },
+    { v: toutes.length - sans.length, l: 'ont déjà un site', filtre: { site: 'avec', prio: '' } },
+    { v: sans.length, l: 'sans site = prospects', cls: 'accent', filtre: { site: 'sans', prio: '' } },
+    { v: sans.filter((l) => l.classement === 'A').length, l: 'priorité A', cls: 'chaud', filtre: { site: 'sans', prio: 'A' } },
+    { v: sans.filter((l) => l.telephone).length, l: 'prospects avec téléphone', filtre: { site: 'sans', prio: '' } },
+  ];
+  $('#stats').innerHTML = stats.map((s, i) => `<button type="button" class="stat ${s.cls ?? ''}" data-i="${i}"><div class="v">${s.v}</div><div class="l">${esc(s.l)}</div></button>`).join('');
+  $$('#stats .stat').forEach((b) => { b.onclick = () => { Object.assign(etat.filtres, stats[b.dataset.i].filtre); etat.limite = PAR_PAGE; rendre(); }; });
+
+  const categories = [...new Set(toutes.map((l) => l.categorie))].sort((a, b) => a.localeCompare(b, 'fr'));
+  const sel = $('#filtreCategorie');
+  sel.innerHTML = `<option value="">Toutes catégories (${categories.length})</option>` + categories.map((c) => `<option ${c === etat.filtres.categorie ? 'selected' : ''}>${esc(c)}</option>`).join('');
+  sel.hidden = categories.length < 2;
+
+  $$('#filtreSite button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.v === etat.filtres.site));
+  $$('#filtrePrio button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.v === etat.filtres.prio));
+
+  $('#tableauRecherche').innerHTML = tableau(lignesFiltrees());
+}
+
+function rendreRecentes() {
+  const conteneur = $('#recentes');
+  conteneur.hidden = !etat.recentes.length;
+  conteneur.innerHTML = '<span class="label">Recherches enregistrées :</span>' + etat.recentes.slice(0, 12).map((m) => `
+    <span class="puce ${etat.recherche?.id === m.id ? 'active' : ''}" data-id="${esc(m.id)}" role="button" tabindex="0">
+      ${esc(m.metierLabel)} · ${esc(m.zone)} <small>${esc(m.sansSite)} sans site · ${esc(dateCourte(m.date))}${m.mode === 'complet' ? ' · avec Google' : ''}</small>
+      <button class="x" data-suppr="${esc(m.id)}" title="Supprimer cette recherche" aria-label="Supprimer">×</button>
+    </span>`).join('');
+}
+
+async function chargerRecherche(id) {
+  etat.recherche = await api(`/api/recherches/${encodeURIComponent(id)}`);
+  etat.filtres = { site: 'sans', prio: '', categorie: '', texte: '' };
+  $('#filtreTexte').value = '';
+  etat.limite = PAR_PAGE;
+  $('#alertes').innerHTML = alertesMeta(etat.recherche.meta);
+  rendre();
+}
+
+function alertesMeta(meta) {
+  const alertes = [...(meta.avertissements ?? [])];
+  if (meta.mode !== 'complet') {
+    alertes.push(etat.config.aCleGoogle
+      ? 'Recherche faite sans Google Maps : « Aucun site trouvé » est une estimation. Relance-la avec la source « Complète » pour avoir téléphones, avis et sites des fiches Google.'
+      : 'Recherche gratuite : « Aucun site trouvé » est une estimation. Avant d\'appeler, ouvre la fiche Google Maps (1 clic dans la fiche de l\'entreprise) et confirme avec « Vérifié : pas de site ». Ajoute une clé Google (onglet Réglages) pour avoir téléphones, avis et sites de toutes les fiches Google.');
+  }
+  return alertes.map((a) => `<div class="alerte">${esc(a)}</div>`).join('');
+}
+
+function lancerRecherche(e) {
+  e.preventDefault();
+  const ville = $('#ville').value.trim();
+  if (!ville) return;
+  etat.flux?.close();
+  const params = new URLSearchParams({ ville, metier: $('#metier').value, rayon: $('#rayon').value });
+  if (etat.config.aCleGoogle) params.set('mode', $('#source').value);
+
+  $('#lancer').disabled = true;
+  $('#progression').hidden = false;
+  $('#accueil').hidden = true;
+  $('#alertes').innerHTML = '';
+  majProgression(1, 'Démarrage…');
+
+  const flux = new EventSource(`/api/recherche?${params}`);
+  etat.flux = flux;
+  const terminer = () => { flux.close(); $('#lancer').disabled = false; setTimeout(() => { $('#progression').hidden = true; }, 400); };
+  flux.addEventListener('progres', (ev) => { const d = JSON.parse(ev.data); majProgression(d.pourcent, d.message); });
+  flux.addEventListener('fin', async (ev) => {
+    terminer();
+    const d = JSON.parse(ev.data);
+    etat.recherche = d;
+    etat.filtres = { site: 'sans', prio: '', categorie: '', texte: '' };
+    $('#filtreTexte').value = '';
+    etat.limite = PAR_PAGE;
+    $('#alertes').innerHTML = alertesMeta(d.meta);
+    [etat.recentes] = await Promise.all([api('/api/recherches'), chargerConfig()]);
+    rendre();
+    toast(`${d.meta.sansSite} entreprises sans site trouvées`);
+  });
+  flux.addEventListener('erreur', (ev) => {
+    terminer();
+    $('#alertes').innerHTML = `<div class="alerte erreur">${esc(JSON.parse(ev.data).message)}</div>`;
+    rendre();
+  });
+  flux.onerror = () => {
+    if (flux.readyState === EventSource.CLOSED) return;
+    terminer();
+    $('#alertes').innerHTML = '<div class="alerte erreur">Connexion au serveur perdue. La fenêtre noire du Prospecteur est-elle toujours ouverte ?</div>';
+  };
+}
+
+function majProgression(pourcent, message) {
+  $('#progression .barre > div').style.width = `${pourcent}%`;
+  $('#progressionTexte').textContent = message;
+  $('#progressionPourcent').textContent = `${pourcent} %`;
+}
+
+// Autocomplétion des villes (API Géo, directement depuis le navigateur)
+// Villes de Suisse romande proposées en plus des communes françaises. Le moteur les trouve par OpenStreetMap :
+// la mention « , Suisse » évite la confusion avec une commune française du même nom (Bulle, Aigle…).
+const VILLES_SUISSES = ['Genève', 'Lausanne', 'Fribourg', 'Neuchâtel', 'Sion', 'Nyon', 'Montreux', 'Vevey', 'Yverdon-les-Bains', 'Morges', 'Renens',
+  'Carouge', 'Lancy', 'Vernier', 'Meyrin', 'Onex', 'Thônex', 'Versoix', 'Gland', 'Pully', 'Prilly', 'Bulle', 'Martigny', 'Monthey', 'Sierre',
+  'La Chaux-de-Fonds', 'Le Locle', 'Delémont', 'Porrentruy', 'Aigle', 'Payerne'];
+const sansAccent = (t) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+let minuteurVille;
+$('#ville').addEventListener('input', (e) => {
+  clearTimeout(minuteurVille);
+  const q = e.target.value.trim();
+  if (q.length < 2 || /\(\d{5}\)$/.test(q) || /, Suisse$/.test(q)) return;
+  minuteurVille = setTimeout(async () => {
+    try {
+      const param = /^\d+$/.test(q) ? (q.length === 5 ? `codePostal=${q}` : null) : `nom=${encodeURIComponent(q)}`;
+      if (!param) return;
+      const suisses = /^\d/.test(q) ? [] : VILLES_SUISSES.filter((v) => sansAccent(v).startsWith(sansAccent(q))).slice(0, 4);
+      const options = (liste) => liste.map((v) => `<option value="${esc(v)}">`).join('');
+      $('#villes').innerHTML = options(suisses.map((v) => `${v}, Suisse`)); // affichées même si l'API française ne répond pas
+      const r = await fetch(`https://geo.api.gouv.fr/communes?${param}&fields=nom,codesPostaux&boost=population&limit=8`);
+      const communes = await r.json();
+      $('#villes').innerHTML = options([...communes.map((c) => `${c.nom} (${c.codesPostaux[0]})`), ...suisses.map((v) => `${v}, Suisse`)]);
+    } catch { /* hors ligne : pas d'autocomplétion */ }
+  }, 220);
+});
+
+// ---------------------------------------------------------------------------------------------
+// Vue Mes prospects
+
+function lignesPipeline() {
+  return Object.entries(etat.prospects)
+    .filter(([, p]) => p.statut && p.ligne)
+    .map(([id, p]) => fusion({ ...p.ligne, id }));
+}
+
+function rendrePipeline() {
+  const toutes = lignesPipeline();
+  const f = etat.filtresPipeline;
+  const compte = (s) => toutes.filter((l) => l.statut === s).length;
+  const aRelancer = toutes.filter((l) => l.relance && l.relance <= aujourdhui() && !['signe', 'refus'].includes(l.statut));
+  const boutons = [{ v: 'tous', l: `Tous (${toutes.length})` }, { v: 'relancer', l: `⏰ À relancer (${aRelancer.length})` },
+    ...STATUTS.map((s) => ({ v: s.v, l: `${s.l} (${compte(s.v)})` }))];
+  $('#filtreStatut').innerHTML = boutons.map((b) => `<button type="button" data-v="${b.v}" aria-pressed="${f.statut === b.v}">${esc(b.l)}</button>`).join('');
+
+  const texte = norm(f.texte);
+  const lignes = (f.statut === 'tous' ? toutes : f.statut === 'relancer' ? aRelancer : toutes.filter((l) => l.statut === f.statut))
+    .filter((l) => !texte || norm(`${l.nom} ${l.adresse} ${l.notes} ${l.categorie}`).includes(texte))
+    .sort((a, b) => (a.relance || '9999').localeCompare(b.relance || '9999') || STATUTS.findIndex((s) => s.v === a.statut) - STATUTS.findIndex((s) => s.v === b.statut));
+  $('#tableauPipeline').innerHTML = tableau(lignes, { pipeline: true });
+  rendreAgenda(toutes, aRelancer);
+}
+
+// Agenda : ce qu'il y a à faire, en haut de « Mes prospects »
+function rendreAgenda(toutes, aRelancer) {
+  const maintenant = new Date();
+  const rdvs = toutes.filter((l) => l.rdv && !['signe', 'refus'].includes(l.statut)).sort((a, b) => a.rdv.date.localeCompare(b.rdv.date));
+  const aVenir = rdvs.filter((l) => new Date(l.rdv.date) >= maintenant);
+  const passes = rdvs.filter((l) => new Date(l.rdv.date) < maintenant);
+  const carte = (l, classe, haut) => `<button type="button" class="carte-agenda ${classe}" data-id="${esc(l.id)}">
+      <small>${haut}</small><strong>${esc(l.nom)}</strong>
+      <span>${esc([l.rdv?.lieu || l.adresse, l.telephone].filter(Boolean).join(' · '))}</span></button>`;
+  const quand = (iso) => {
+    const d = new Date(iso); const j = jourLocal(d);
+    const jour = j === aujourdhui() ? 'Aujourd\'hui' : j === dansJours(1) ? 'Demain' : d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+    return `📅 ${jour} à ${d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
+  };
+  const cartes = [
+    ...passes.map((l) => carte(l, 'retard', `RDV passé (${esc(dateCourte(l.rdv.date))}) : note le résultat`)),
+    ...aVenir.map((l) => carte(l, jourLocal(new Date(l.rdv.date)) === aujourdhui() ? 'jour' : '', esc(quand(l.rdv.date)))),
+    ...aRelancer.filter((l) => !l.rdv).map((l) => carte(l, 'relance', `⏰ À relancer${l.relance < aujourdhui() ? ` (prévu le ${esc(dateCourte(l.relance))})` : ' aujourd\'hui'}`)),
+  ];
+  $('#agenda').innerHTML = (cartes.length ? `<div class="agenda"><h3>À faire</h3><div class="cartes-agenda">${cartes.join('')}</div></div>` : '') + bilanDesAppels();
+}
+
+// Ce que tes appels t'apprennent : combien aboutissent, et quelles objections reviennent le plus
+function bilanDesAppels() {
+  const contacts = Object.values(etat.prospects).flatMap((p) => p.historique ?? []).filter((h) => h.type === 'appel');
+  if (contacts.length < 3) return '';
+  const joints = contacts.filter((h) => !['pas-de-reponse', 'repondeur'].includes(h.resultat));
+  const rdv = contacts.filter((h) => h.resultat === 'rdv').length;
+  const compte = {};
+  for (const h of contacts) for (const o of h.objections ?? []) compte[o] = (compte[o] ?? 0) + 1;
+  const top = Object.entries(compte).sort((a, b) => b[1] - a[1]).slice(0, 4);
+  return `<div class="agenda"><h3>Tes appels</h3><div class="bilan-appels">
+    <span><strong>${contacts.length}</strong> appels</span>
+    <span><strong>${joints.length}</strong> personnes jointes</span>
+    <span><strong>${rdv}</strong> rendez-vous${joints.length ? ` (${Math.round((rdv / joints.length) * 100)} % des personnes jointes)` : ''}</span>
+    ${['permission', 'directe'].map((o) => { const s = contacts.filter((h) => h.ouverture === o && h.decideur); if (!s.length) return ''; const conv = s.filter((h) => h.conversation).length; return `<span>Ouverture « ${o === 'directe' ? 'raison de l\'appel' : '30 secondes'} » : ${conv} conversation${conv > 1 ? 's' : ''} sur ${s.length} décideur${s.length > 1 ? 's' : ''} joint${s.length > 1 ? 's' : ''}</span>`; }).join('')}
+    ${top.length ? `<span>Objections les plus entendues : ${top.map(([o, n]) => `${esc(OBJECTIONS[o] ?? o)} (${n})`).join(' · ')}</span>` : ''}
+  </div></div>`;
+}
+$('#agenda').onclick = (e) => { const c = e.target.closest('[data-id]'); if (c) ouvrirFiche(c.dataset.id); };
+
+function majCompteur() {
+  // Pastille de l'onglet : ce qui demande une action aujourd'hui (RDV du jour, RDV passés à noter, relances dues)
+  const maintenant = new Date();
+  const urgents = Object.values(etat.prospects).filter((p) => p.statut && p.ligne && !['signe', 'refus'].includes(p.statut)
+    && ((p.rdv?.date && (jourLocal(new Date(p.rdv.date)) === aujourdhui() || new Date(p.rdv.date) < maintenant))
+      || (p.relance && p.relance <= aujourdhui()))).length;
+  const c = $('#nbSuivis');
+  c.hidden = !urgents;
+  c.textContent = urgents;
+  c.title = `${urgents} action${urgents > 1 ? 's' : ''} à faire aujourd'hui`;
+  document.title = urgents ? `(${urgents}) Prospecteur` : 'Prospecteur';
+}
+
+// Liens ouverts depuis une notification Windows : #fiche=<id> ou #relances
+function appliquerLien() {
+  const h = decodeURIComponent(location.hash.slice(1));
+  if (!h) return;
+  history.replaceState(null, '', location.pathname);
+  if (['reglages', 'profil', 'emails', 'recherche'].includes(h)) { etat.vue = h; rendre(); return; } // lien direct vers un onglet
+  etat.vue = 'pipeline';
+  etat.filtresPipeline.statut = h === 'relances' ? 'relancer' : 'tous';
+  rendre();
+  if (h.startsWith('fiche=') && trouverLigne(h.slice(6))) ouvrirFiche(h.slice(6));
+}
+window.addEventListener('hashchange', appliquerLien);
+
+// ---------------------------------------------------------------------------------------------
+// Fiche prospect
+
+function trouverLigne(id) {
+  const brute = etat.recherche?.lignes.find((l) => l.id === id) ?? (etat.prospects[id]?.ligne && { ...etat.prospects[id].ligne, id });
+  return brute ? fusion(brute) : null;
+}
+
+function ouvrirFiche(id) {
+  etat.ficheId = id;
+  rendreFiche();
+  $('#voile').hidden = false;
+  $('#fiche').hidden = false;
+  $$('tr.ouvert').forEach((tr) => tr.classList.remove('ouvert'));
+  $$(`tr[data-id="${CSS.escape(id)}"]`).forEach((tr) => tr.classList.add('ouvert'));
+  completerAdresse(id);
+}
+
+// Certains commerces (surtout hors de France) n'ont pas de rue sur la carte : on la retrouve à partir de leur position.
+async function completerAdresse(id) {
+  const brute = etat.recherche?.lignes.find((l) => l.id === id) ?? etat.prospects[id]?.ligne;
+  if (!brute?.adresseIncomplete || !brute.lat) return;
+  let r;
+  try { r = await api(`/api/adresse?lat=${brute.lat}&lon=${brute.lon}`); } catch { r = { ok: false }; }
+  brute.adresseIncomplete = false;
+  if (r.ok) { brute.adresse = r.adresse; brute.cp ||= r.cp; }
+  const zone = $('#adresseFiche');
+  if (etat.ficheId === id && zone) {
+    zone.innerHTML = esc(brute.adresse) + (r.ok && r.approximatif ? ' <span class="vide">(rue trouvée, numéro à vérifier)</span>' : r.ok ? '' : ' <span class="vide">(rue inconnue : vois la fiche Google Maps)</span>');
+  }
+  if (r.ok && etat.prospects[id]?.statut) enregistrer(id, {}); // met à jour l'adresse gardée dans « Mes prospects »
+}
+
+function fermerFiche() {
+  etat.ficheId = null;
+  $('#voile').hidden = true;
+  $('#fiche').hidden = true;
+  $$('tr.ouvert').forEach((tr) => tr.classList.remove('ouvert'));
+}
+
+function rendreFiche() {
+  const l = trouverLigne(etat.ficheId);
+  if (!l) { fermerFiche(); return; }
+  const q = encodeURIComponent(`${l.nom} ${l.ville ?? ''}`);
+  const d = l.dirigeant;
+  const ans = annees(l.creation);
+
+  $('#fiche').innerHTML = `
+    <div class="fiche-tete">
+      <span class="prio prio-${esc(l.classement)}" style="width:34px;height:34px;font-size:15px">${l.classement === 'Z' ? '–' : esc(l.classement)}</span>
+      <div style="min-width:0">
+        <h2>${esc(l.nom)}</h2>
+        <span class="sous">${esc([l.categorie, l.raisonSociale].filter(Boolean).join(' · '))}</span>
+      </div>
+      <button class="btn fantome petit fermer" data-action="fermer" aria-label="Fermer">✕</button>
+    </div>
+    <div class="fiche-corps">
+      <div class="liens">
+        <a class="btn petit" href="${esc(l.mapsUrl)}" target="_blank" rel="noopener">📍 Fiche Google Maps</a>
+        <a class="btn petit" href="https://www.google.com/search?q=${q}" target="_blank" rel="noopener">🔎 Recherche Google</a>
+        ${(l.pays ?? 'fr') === 'fr' ? `<a class="btn petit" href="https://www.pagesjaunes.fr/annuaire/chercherlespros?quoiqui=${encodeURIComponent(l.nom)}&ou=${encodeURIComponent(l.cp || l.ville || '')}" target="_blank" rel="noopener">📒 Pages Jaunes</a>` : ''}
+        ${l.site?.url ? `<a class="btn petit" href="${esc(l.site.url)}" target="_blank" rel="noopener">🌐 ${
+          { oui: 'Voir son site', douteux: 'Voir le site homonyme', reseaux: `Voir la page (${esc(pageReseau(l.site.url).court.replace(' seulement', ''))})` }[l.site.statut] ?? 'Voir le lien'}</a>` : ''}
+      </div>
+
+      <div class="bloc">
+        <h3>Présence web</h3>
+        <div class="site-etat">${badgeSite(l)}<span class="detail">${esc(l.site?.source ?? '')}${l.site?.url ? ` : ${esc(l.site.url)}` : ''}</span></div>
+        <div class="choix">
+          <button class="btn petit" data-site="non" aria-pressed="${l.siteManuel === 'non'}">✓ Vérifié : pas de site</button>
+          <button class="btn petit" data-site="oui" aria-pressed="${l.siteManuel === 'oui'}">Il a un site</button>
+          ${l.siteManuel ? '<button class="btn petit fantome" data-site="">Annuler</button>' : ''}
+        </div>
+      </div>
+
+      <div class="bloc">
+        <h3>Suivi ${badgeTemperature(l)} <span class="enregistre" id="etatEnregistrement"></span></h3>
+        <div class="actions-suivi">
+          <button class="btn primaire" data-action="appel-guide" type="button">📞 Lancer l'appel guidé</button>
+          <button class="btn" data-action="noter" type="button">＋ Noter un appel ou une visite</button>
+        </div>
+
+        <form class="form-contact" id="formContact" novalidate hidden>
+          <div class="segment" data-groupe="type" role="group" aria-label="Type de contact">
+            ${TYPES_CONTACT.map((t, i) => `<button type="button" data-v="${t.v}" aria-pressed="${i === 0}">${t.l}</button>`).join('')}
+          </div>
+          <div class="champ"><span>Résultat</span>
+            <div class="pastilles" data-groupe="resultat" role="group" aria-label="Résultat">
+              ${RESULTATS.map((r) => `<button type="button" data-v="${r.v}" aria-pressed="false">${r.l}</button>`).join('')}
+            </div>
+          </div>
+          <div class="suivi" id="zoneRelance" hidden>
+            <label class="champ plein"><span>Me le rappeler le</span><input class="input" type="date" name="relance"></label>
+          </div>
+          <div class="suivi" id="zoneRdv" hidden>
+            <label class="champ"><span>Jour du rendez-vous</span><input class="input" type="date" name="rdvJour" min="${aujourdhui()}"></label>
+            <label class="champ"><span>Heure</span><input class="input" type="time" name="rdvHeure" value="10:00"></label>
+            <label class="champ plein"><span>Lieu</span><input class="input" name="rdvLieu" value="${esc(l.adresse)}"></label>
+          </div>
+          <label class="champ"><span>Ce qui s'est dit</span><textarea class="input" name="note" placeholder="Sa réaction, ses objections, ce qu'il attend, le bon moment pour le rappeler…"></textarea></label>
+          <div class="ligne-actions" style="margin-top:0">
+            <button class="btn primaire" type="submit">Enregistrer</button>
+            <button class="btn fantome" type="button" data-action="annuler-contact">Annuler</button>
+          </div>
+        </form>
+
+        ${l.rdv ? `<div class="carte-rdv ${new Date(l.rdv.date) < new Date() ? 'passe' : ''}">
+          <strong>📅 ${new Date(l.rdv.date) < new Date() ? 'Rendez-vous passé : ' : 'Rendez-vous '}${esc(dateLongue(l.rdv.date))}</strong>
+          <div class="suivi">
+            <label class="champ"><span>Date et heure</span><input class="input" type="datetime-local" data-rdv="date" value="${esc(l.rdv.date)}"></label>
+            <label class="champ"><span>Lieu</span><input class="input" data-rdv="lieu" value="${esc(l.rdv.lieu ?? '')}"></label>
+          </div>
+          <div class="choix">
+            <a class="btn petit" href="${esc(lienAgenda(l))}" target="_blank" rel="noopener">Ajouter à Google Agenda</a>
+            <button class="btn petit fantome" type="button" data-action="supprimer-rdv">Annuler ce rendez-vous</button>
+          </div>
+          <p class="sous" style="margin:8px 0 0">Rappels Windows : la veille à 17 h, le matin, 1 h avant et 15 min avant.</p>
+        </div>` : ''}
+
+        <div class="suivi" style="margin-top:14px">
+          <label class="champ"><span>Statut</span>
+            <select class="input" data-champ="statut">
+              <option value="">— Pas encore suivi —</option>
+              ${STATUTS.map((s) => `<option value="${s.v}" ${l.statut === s.v ? 'selected' : ''}>${s.l}</option>`).join('')}
+            </select></label>
+          <label class="champ"><span>Date de relance</span><input class="input" type="date" data-champ="relance" value="${esc(l.relance)}"></label>
+          <label class="champ plein"><span>Notes générales</span><textarea class="input" data-champ="notes" placeholder="Infos utiles sur l'entreprise : horaires calmes, nom de l'employé, concurrent cité…">${esc(l.notes)}</textarea></label>
+        </div>
+
+        <div class="qualif">
+          <div class="champ"><span>Qualification : coche ce qui est vrai</span></div>
+          ${CRITERES.map((c) => `<label class="critere" title="${esc(c.aide)}">
+            <input type="checkbox" data-qualif="${c.v}" ${l.qualif[c.v] ? 'checked' : ''}>
+            <span><strong>${esc(c.l)}</strong><small>${esc(c.aide)}</small></span>
+          </label>`).join('')}
+        </div>
+
+        ${l.historique.length ? `<div class="historique">
+          <div class="champ"><span>Historique (${l.historique.length})</span></div>
+          ${l.historique.map((h) => `<div class="entree">
+            <span class="quand">${esc(new Date(h.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }))}<br>${esc(new Date(h.date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }))}</span>
+            <span><strong>${esc(LABEL_TYPE[h.type] ?? h.type)} · ${esc(LABEL_RESULTAT[h.resultat] ?? h.resultat)}</strong>${
+              h.rdv ? `<small>RDV fixé : ${esc(dateLongue(h.rdv))}</small>` : ''}${h.note ? `<small>${esc(h.note)}</small>` : ''}</span>
+          </div>`).join('')}
+        </div>` : ''}
+      </div>
+
+      <div class="bloc">
+        <h3>Coordonnées</h3>
+        <dl class="infos">
+          <dt>Téléphone</dt><dd><input class="input" data-champ="telephone" value="${esc(l.telephone)}" placeholder="Pas trouvé : copie-le depuis Google Maps"></dd>
+          <dt>Email</dt><dd><input class="input" type="email" data-champ="email" value="${esc(l.email)}" placeholder="Inconnu : demande-le pendant l'appel"></dd>
+          <dt>Adresse</dt><dd id="adresseFiche">${esc(l.adresse)}${l.adresseIncomplete ? ' <span class="vide">(recherche de la rue…)</span>' : ''}</dd>
+          ${d ? `<dt>Dirigeant</dt><dd><strong>${esc(`${d.prenom ?? ''} ${d.nom}`.trim())}</strong>${d.qualite ? ` <span class="vide">(${esc(d.qualite)})</span>` : ''}</dd>` : ''}
+          ${l.creation ? `<dt>Création</dt><dd>${esc(new Date(l.creation).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }))}${ans >= 1 ? ` · ${ans} an${ans > 1 ? 's' : ''}` : ''}${l.employeur ? ' · a des salariés' : ''}</dd>` : ''}
+          ${l.note ? `<dt>Google</dt><dd>★ ${esc(String(l.note).replace('.', ','))} · ${esc(l.avis)} avis</dd>` : ''}
+          ${l.siret ? `<dt>SIRET</dt><dd><a href="https://annuaire-entreprises.data.gouv.fr/etablissement/${esc(l.siret)}" target="_blank" rel="noopener">${esc(l.siret.replace(/(\d{3})(\d{3})(\d{3})(\d{5})/, '$1 $2 $3 $4'))}</a></dd>` : ''}
+          <dt>Source</dt><dd class="vide">${esc(l.source)}</dd>
+        </dl>
+      </div>
+
+      <div class="bloc">
+        <h3>Avis client à citer dans l'accroche</h3>
+        <label class="champ"><span>Un vrai avis, copié depuis sa fiche Google</span>
+          <textarea class="input" data-avis="texte" placeholder="Ex. : Garagiste honnête, il m'a expliqué la panne et le prix avant de toucher à la voiture.">${esc(l.avisCite?.texte ?? '')}</textarea></label>
+        <label class="champ" style="margin-top:10px"><span>Prénom du client (facultatif)</span>
+          <input class="input" data-avis="auteur" value="${esc(l.avisCite?.auteur ?? '')}" placeholder="Ex. : Sophie"></label>
+        <div class="choix">
+          <a class="btn petit" href="${esc(l.mapsUrl)}" target="_blank" rel="noopener">📍 Lire ses avis sur Google Maps</a>
+          ${etat.config.aCleGoogle ? '<button class="btn petit" type="button" data-action="avis-google">Récupérer ses avis Google (1 requête)</button>' : ''}
+        </div>
+        <div id="avisGoogle"></div>
+        <p class="sous" style="margin:8px 0 0">L'accroche de l'appel, le script et l'email citeront cet avis. N'utilise que des avis réels : le commerçant les connaît par cœur.${
+          etat.config.aCleGoogle ? '' : ' Avec une clé Google (Réglages), l\'outil pourra les récupérer pour toi.'}</p>
+      </div>
+
+      ${l.raisons?.length ? `<div class="bloc"><h3>Pourquoi cette priorité</h3>
+        <ul class="raisons">${l.raisons.map((r) => `<li>${esc(r)}</li>`).join('')}</ul>
+        <p class="sous" style="margin:8px 0 0">Confiance ${esc(l.confiance ?? 'moyenne')} : ${{ haute: 'plusieurs sources concordent.', moyenne: 'une seule source. Vérifie la fiche Google avant de contacter.', faible: 'présence en ligne incertaine. Vérifie avant de contacter.' }[l.confiance] ?? ''}</p>
+      </div>` : ''}
+
+      ${l.angle ? `<div class="bloc"><h3>Angle d'attaque</h3><p class="angle">${esc(l.angle)}</p></div>` : ''}
+
+      <div class="bloc">
+        <h3>Prêt à l'emploi</h3>
+        <div class="segment onglets-texte" role="group">
+          ${[['appel', 'Script d\'appel'], ['ia', '✨ Script IA'], ['email', 'Email'], ['sms', 'SMS'], ['repondeur', 'Répondeur'], ['relance', 'Email de relance'], ['apresAppel', 'Email après appel']]
+            .map(([v, lab]) => `<button type="button" data-onglet="${v}" aria-pressed="${etat.ongletTexte === v}">${lab}</button>`).join('')}
+        </div>
+        <div id="zoneIA" hidden></div>
+        <pre class="texte-pret" id="textePret"></pre>
+        <div class="actions-texte"><button class="btn petit primaire" data-action="copier">Copier le texte</button></div>
+        ${!etat.config.profil?.prenom ? '<p class="sous" style="margin-top:8px">Astuce : remplis l\'onglet Profil pour que ton prénom et ton numéro s\'insèrent automatiquement.</p>' : ''}
+      </div>
+
+      <div class="bloc">
+        <details class="objections">
+          <summary>Réponses aux objections</summary>
+          <dl>
+            <dt>« J'ai assez de clients. »</dt><dd>« Tant mieux ! Un site vous fait aussi gagner du temps : moins d'appels pour les horaires ou les prix, et vous choisissez vos clients. Le jour où ça ralentit, vous êtes déjà prêt. »</dd>
+            <dt>« J'ai déjà Facebook / ma fiche Google. »</dt><dd>« Gardez-les ! Mais vous n'en êtes pas propriétaire, et Google met en avant les entreprises qui ont un vrai site. Le site les complète. »</dd>
+            <dt>« C'est trop cher. »</dt><dd>« Combien vous rapporte un nouveau client ? … Donc avec quelques clients de plus dans l'année, le site est remboursé. Et je peux proposer un paiement en plusieurs fois. »</dd>
+            <dt>« Pas le temps de m'en occuper. »</dt><dd>« C'est mon travail : textes, photos, mise en ligne. Vous, c'est 30 minutes pour me raconter votre activité, et vous validez. »</dd>
+            <dt>« Envoyez-moi un mail. »</dt><dd>« Avec plaisir. Pour vous envoyer quelque chose d'utile : le plus important pour vous, c'est plus de clients ou gagner du temps ? » Puis email le jour même et rappel 3 jours après.</dd>
+            <dt>« Mon neveu va me le faire. »</dt><dd>« Super ! Si ça traîne, gardez mon numéro. Je peux vous préparer une maquette, ça pourra l'inspirer. »</dd>
+            <dt>« Ça ne m'intéresse pas. »</dt><dd>« Pas de souci, merci pour votre temps. » Mets le statut « Refus » et ne rappelle plus.</dd>
+          </dl>
+        </details>
+      </div>
+    </div>`;
+  afficherTexte(l);
+}
+
+function afficherTexte(l) {
+  const t = textes(l)[etat.ongletTexte];
+  const ia = etat.ongletTexte === 'ia';
+  $('#zoneIA').hidden = !ia;
+  $('#textePret').hidden = ia && !t;
+  $('[data-action="copier"]', $('#fiche')).hidden = ia && !t;
+  if (ia) $('#zoneIA').innerHTML = zoneScriptIA(l);
+  $('#textePret').innerHTML = esc(t).replace(/^(【[^】]+】)/gm, '<span class="etape-script">$1</span>');
+}
+
+// Onglet « Script IA » : un script rédigé sur mesure par Claude à partir de la fiche (payant, quelques centimes)
+function zoneScriptIA(l) {
+  const ia = etat.config.ia ?? {};
+  if (!ia.aCle) {
+    return `<p class="sous">Une IA rédige un script d'appel entièrement sur mesure pour ce prospect : accroche, questions propres à son métier, objections probables. Elle s'appuie sur la fiche, l'avis client cité, tes notes et tes appels précédents.</p>
+      <p class="sous" style="margin-top:6px">Il faut une <strong>clé Anthropic</strong> : onglet Réglages → « Script IA ». Le script guidé et les modèles ci-contre restent gratuits.</p>`;
+  }
+  const modele = ia.modeles?.find((m) => m.id === ia.modele)?.label.split(' :')[0] ?? ia.modele;
+  if (etat.generationIA === l.id) return '<p class="sous">✨ Rédaction en cours… (20 à 60 secondes)</p>';
+  if (!l.scriptIA) {
+    return `<p class="sous">L'IA rédige un script sur mesure à partir de cette fiche${l.avisCite?.texte ? ', de l\'avis client cité' : ''}${l.historique.length ? ' et de tes échanges précédents' : ''}.
+        ${l.avisCite?.texte ? '' : '<strong>Conseil :</strong> ajoute d\'abord un vrai avis client plus haut, le script sera bien meilleur.'}</p>
+      <div class="choix"><button class="btn primaire" type="button" data-action="generer-ia">✨ Générer le script IA</button>
+        <span class="sous" style="align-self:center">${esc(modele)} · quelques centimes par script</span></div>`;
+  }
+  const depuis = l.historique[0] && l.historique[0].date > l.scriptIA.date;
+  const auteur = ia.modeles?.find((m) => m.id === l.scriptIA.modele)?.label.split(' :')[0] ?? l.scriptIA.modele ?? modele;
+  return `<p class="sous">Rédigé par ${esc(auteur)} le ${esc(new Date(l.scriptIA.date).toLocaleString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }))}
+      · coût ${esc(l.scriptIA.cout?.toFixed(3).replace('.', ','))} $. Relis-le avant d'appeler : l'IA peut se tromper.</p>
+    ${depuis ? '<p class="sous" style="color:var(--warm)">Tu as noté un nouveau contact depuis : régénère le script pour qu\'il en tienne compte.</p>' : ''}
+    <div class="choix" style="margin-bottom:10px"><button class="btn petit" type="button" data-action="generer-ia">↻ Régénérer</button></div>`;
+}
+
+async function genererScriptIA(id) {
+  const l = trouverLigne(id);
+  etat.generationIA = id;
+  afficherTexte(l);
+  let r;
+  try { r = await api('/api/ia/script', { method: 'POST', body: JSON.stringify({ prospect: l }) }); } catch (e) { r = { ok: false, message: e.message }; }
+  etat.generationIA = null;
+  if (r.ok) {
+    enregistrer(id, { scriptIA: { texte: r.texte, date: r.date, modele: r.modele, cout: r.cout } });
+    toast(r.tronque ? 'Script généré (coupé : trop long)' : 'Script IA prêt');
+  } else {
+    toast(r.message);
+  }
+  chargerConfig();
+  if (etat.ficheId === id) {
+    afficherTexte(trouverLigne(id));
+    if (!r.ok) $('#zoneIA').insertAdjacentHTML('beforeend', `<p class="message-cle ko" style="margin-top:8px">${esc(r.message)}</p>`);
+  }
+}
+
+// Extrait d'avis prêt à être dit à voix haute : sans guillemets autour, et coupé proprement s'il est long.
+function extraitAvis(texte, max = 170) {
+  const t = String(texte ?? '').replace(/\s+/g, ' ').trim().replace(/^[«"“'\s]+|[»"”'\s]+$/g, '');
+  if (t.length <= max) return t;
+  const phrases = t.match(/[^.!?]+[.!?]+/g) ?? [];
+  let extrait = '';
+  for (const p of phrases) { if ((extrait + p).length > max) break; extrait += p; }
+  return (extrait.trim() || `${t.slice(0, max).replace(/\s+\S*$/, '')}…`);
+}
+
+// Tout ce que les scripts savent du prospect et de toi (partagé par le script, les emails et l'appel guidé)
+function contexte(l) {
+  const pr = etat.config.profil ?? {};
+  const moi = pr.prenom || '[Ton prénom]';
+  const maVille = pr.ville || '[ta ville]';
+  const chiffres = (pr.telephone ?? '').replace(/\D/g, '');
+  const monTel = chiffres.length === 10 ? chiffres.replace(/(\d{2})(?=\d)/g, '$1 ') : pr.telephone || '[ton numéro]';
+  const prix = pr.prixDepart || '[ton prix de départ]';
+  const signature = [[pr.prenom, pr.nom].filter(Boolean).join(' ') || '[Ton prénom Nom]',
+    [pr.telephone || '[Téléphone]', pr.site, pr.email].filter(Boolean).join(' · ')].join('\n');
+  const d = l.dirigeant?.prenom ? l.dirigeant : null;
+  const interlocuteur = d ? `${d.prenom} ${d.nom}` : 'au responsable';
+  const ville = l.ville || etat.recherche?.meta.ville || '[ville]';
+  // Ce qu'un client taperait dans Google : « coiffeur Sucy-en-Brie », « boutique de vêtements Bry-sur-Marne »…
+  const premierMot = (l.motCle || l.categorie || '').split(' ')[0].toLowerCase();
+  const TERMES = { institut: 'institut de beauté', boutique: 'boutique de vêtements', 'réparation': 'réparation de téléphone', salle: 'salle de sport', agence: 'agence immobilière', peintre: 'peintre en bâtiment', entreprise: 'entreprise de nettoyage' };
+  const terme = TERMES[premierMot] ?? premierMot;
+  const motRecherche = `${terme} ${ville}`;
+  const ans = annees(l.creation);
+  // Les avis ne servent d'argument que s'ils sont réellement bons : appeler « très belle réputation » un 3,7/5
+  // se retourne contre nous, le commerçant connaît sa note. En dessous, on parle d'ancienneté ou on va droit au constat.
+  const reputation = l.note >= 4.3 && l.avis >= 5 ? `${String(l.note).replace('.', ',')}/5 sur ${l.avis} avis` : '';
+  const avis = l.avisCite?.texte?.trim() ? { extrait: extraitAvis(l.avisCite.texte), auteur: (l.avisCite.auteur ?? '').trim().split(' ')[0] } : null;
+  const citation = avis ? `${avis.auteur ? `${avis.auteur} écrit` : 'L\'un d\'eux écrit'} : « ${avis.extrait} »` : '';
+  const compliment = avis
+    ? `J'ai lu les avis de vos clients sur Google${reputation ? ` (${reputation})` : ''}. ${citation} C'est exactement ce qu'un nouveau client a besoin de lire avant de venir.`
+    : reputation
+      ? `J'ai vu votre fiche Google : ${reputation}, c'est une très belle réputation.`
+      : ans >= 3 ? `J'ai vu que vous êtes installés à ${ville} depuis ${ans} ans, vous avez une vraie clientèle.`
+        : `Je m'intéresse aux commerces de ${ville} et je suis tombé sur ${l.nom}.`;
+  const reseauxSeuls = l.site?.statut === 'reseaux' && !l.aUnSite;
+  const constat = reseauxSeuls
+    ? `Par contre, quand quelqu'un cherche « ${motRecherche} » sur Google, il ne trouve qu'${pageReseau(l.site.url).phrase}, pas de vrai site à votre nom. Il tombe sur vos concurrents.`
+    : `Par contre, quand quelqu'un cherche « ${motRecherche} » sur Google, il ne trouve pas de site à votre nom. Il tombe sur vos concurrents.`;
+  const angle = l.angle ? l.angle.charAt(0).toLowerCase() + l.angle.slice(1) : 'vos horaires, vos tarifs, vos photos, vos avis et un bouton pour vous appeler.';
+  const bonjour = d ? `Bonjour ${d.prenom} ${d.nom},` : 'Bonjour,';
+  // Ici le nombre d'avis suffit : c'est un constat de volume, pas un compliment sur la note.
+  const objet = l.avis >= 5 ? `${l.nom} : vos ${l.avis} avis méritent un site` : `Un site internet pour ${l.nom} ?`;
+  return { pr, moi, maVille, monTel, prix, signature, d, interlocuteur, ville, terme, motRecherche, ans, reputation, avis, citation, compliment, reseauxSeuls, constat, angle, bonjour, objet, nom: l.nom };
+}
+
+function textes(l) {
+  const { pr, moi, maVille, monTel, signature, interlocuteur, motRecherche, reputation, citation, compliment, reseauxSeuls, constat, angle, bonjour, objet } = contexte(l);
+  const stop = 'Si vous ne souhaitez plus recevoir de message de ma part, répondez simplement « stop ».';
+
+  const t = {
+    ia: l.scriptIA?.texte ?? '',
+    appel: [
+      '【① OUVERTURE】',
+      `« Bonjour, ${moi}, je suis créateur de sites web à ${maVille}. Je pourrais parler à ${interlocuteur} ? »`,
+      '« Je vous appelle à l\'improviste, vous ne me connaissez pas. Vous me laissez trente secondes pour vous dire pourquoi, et vous me dites ensuite si ça vaut le coup de continuer ? »',
+      '(S\'il n\'a pas le temps : « Je vous rappelle quand ? Demain matin ou en fin de journée ? »)',
+      '',
+      '【② ACCROCHE】',
+      `« ${compliment}`,
+      `${constat} »`,
+      '',
+      '【③ QUESTION : puis écoute et note la réponse】',
+      '« Aujourd\'hui, vos nouveaux clients vous trouvent comment, principalement ? »',
+      '',
+      '【④ PROPOSITION】',
+      `« Je fais des sites simples et efficaces pour les commerces du coin. Pour vous, ce serait : ${angle} »`,
+      '« Je peux vous préparer une maquette de ce que pourrait donner votre site, et passer vous la montrer : 15 minutes, sans engagement. Plutôt [mardi en fin de matinée] ou [jeudi après-midi] ? »',
+    ].join('\n'),
+    email: [
+      `Objet : ${objet}`,
+      '',
+      bonjour,
+      '',
+      `Je m'appelle ${moi}, je crée des sites internet pour les commerces et artisans de ${maVille === '[ta ville]' ? 'votre secteur' : `${maVille} et alentours`}.`,
+      '',
+      `En cherchant « ${motRecherche} » sur Google, ${reputation ? `je suis tombé sur votre fiche : ${reputation}, c'est remarquable.` : `je suis tombé sur ${l.nom}.`}${citation ? ` ${citation.replace(/^L'un d'eux écrit/, 'Un de vos clients écrit')}` : ''}`,
+      `Pourtant, ${l.nom} n'a pas ${reseauxSeuls ? `de vrai site (seulement ${pageReseau(l.site.url).phrase})` : 'de site'}. Concrètement, un client qui compare en ligne voit vos concurrents, pas vous.`,
+      '',
+      `Je peux vous préparer une maquette de ce que pourrait donner votre site : ${angle}`,
+      'Je peux passer vous la montrer, 15 minutes, sans engagement.',
+      '',
+      'Seriez-vous disponible [mardi ou jeudi] ?',
+      '',
+      'Bonne journée,',
+      signature,
+      '',
+      stop,
+    ].join('\n'),
+    sms: `Bonjour, ${moi}, créateur de sites web à ${maVille}. ${reputation ? `J'ai vu les très bons avis de ${l.nom} sur Google` : `J'ai remarqué que ${l.nom} n'a pas encore de site`} et je peux vous préparer une maquette de site à votre image, à regarder en 15 min quand ça vous arrange. Bonne journée !`,
+    repondeur: `« Bonjour, ${moi}, créateur de sites web à ${maVille}. ${reputation ? 'J\'ai vu vos excellents avis Google et j\'ai' : 'J\'ai'} une idée de site pour ${l.nom}. Je vous envoie un petit message, et vous pouvez me rappeler au ${monTel}. Bonne journée ! »\n\n(20 secondes max, puis envoie le SMS.)`,
+    relance: [
+      `Objet : Re: ${objet}`,
+      '',
+      bonjour,
+      '',
+      'Je me permets de revenir vers vous : avez-vous eu le temps de réfléchir à mon message ?',
+      'Si le moment n\'est pas idéal, dites-le-moi simplement et je vous recontacterai plus tard.',
+      '',
+      moi,
+      pr.telephone || '',
+      '',
+      stop,
+    ].join('\n'),
+  };
+  // Email envoyé après un appel, à l'adresse que le commerçant vient de donner : il l'attend et il y répond, ce qui lui
+  // évite le dossier des indésirables (les premiers emails « à froid » y arrivent chez Gmail, essais du 13 octobre 2026).
+  t.apresAppel = [
+    'Objet : suite à notre appel',
+    '',
+    bonjour,
+    '',
+    'Merci pour votre temps au téléphone. Comme convenu, je vous écris pour que vous ayez mes coordonnées.',
+    '',
+    `Pour ${l.nom} : [ce que vous avez convenu : une maquette à lui montrer, un rendez-vous, un rappel tel jour].`,
+    '',
+    'Pouvez-vous me répondre d\'un mot pour me confirmer que ce message vous est bien parvenu ?',
+    '',
+    'Bonne journée,',
+    signature,
+  ].join('\n');
+  // Les emails affichés dans la fiche sont exactement ceux que l'onglet « Emails » envoie.
+  const m = modelesEmail(l);
+  if (m) {
+    t.email = `Objet : ${m.etapes[0].objet}\n\n${m.etapes[0].corps}`;
+    t.relance = `Objet : ${m.etapes[1].objet}\n\n${m.etapes[1].corps}`;
+  } else if (l.aUnSite && !siteFiable(l)) {
+    t.email = t.relance = `L'outil a trouvé un site qui porte un nom proche (${l.site?.url ?? ''}), mais sans preuve qu'il appartient à cette entreprise.\nOuvre-le : si c'est bien le leur, clique sur « Il a un site » plus haut, et l'email de refonte sera proposé. Sinon, clique sur « Vérifié : pas de site ».`;
+  } else if (l.aUnSite) {
+    t.email = t.relance = l.audit
+      ? 'Cette entreprise a déjà un site, et l\'outil n\'y a relevé aucun défaut vérifiable (adapté aux téléphones, sécurisé, à jour).\nIl n\'y a donc pas d\'argument honnête pour proposer une refonte par email.'
+      : 'Cette entreprise a déjà un site. Pour lui proposer une refonte, l\'outil doit d\'abord lire son site :\nonglet « Emails » → « Chercher les emails sur les sites de la recherche affichée ».';
+  }
+  return t;
+}
+
+// ---------------------------------------------------------------------------------------------
+// Appel guidé : à chaque étape, ce qu'il faut dire, puis des boutons pour ce que répond le prospect.
+
+const OBJECTIONS = {
+  prix: 'Demande le prix', cher: 'Trop cher', temps: 'Pas le temps', facebook: 'A déjà Facebook / fiche Google', neveu: 'Quelqu\'un s\'en occupe',
+  assez: 'Assez de clients', reflechir: 'Veut réfléchir', mail: 'Demande un mail', pasinteresse: 'Pas intéressé', barrage: 'Barrage (employé)', asite: 'Dit avoir un site',
+};
+const FINS = {
+  fin_rdv: 'rdv', fin_rappel: 'a-rappeler', fin_absent: 'a-rappeler', fin_mail: 'interesse', fin_refus: 'refus',
+  fin_nr: 'pas-de-reponse', fin_repondeur: 'repondeur', fin_content: 'refus',
+};
+
+function arbreAppel(c, ouverture = etat.appel?.ouverture ?? 'permission') {
+  const creneaux = '[mardi en fin de matinée] ou [jeudi après-midi]';
+  const rdv = `On se voit 15 minutes, plutôt ${creneaux} ?`;
+  // Après la proposition (et après chaque objection traitée), le prospect peut répondre tout ceci :
+  const suite = (sauf) => [
+    { l: 'D\'accord pour un rendez-vous', vers: 'fin_rdv', ton: 'ok' },
+    { l: 'C\'est combien ?', vers: 'obj_prix' },
+    { l: 'C\'est trop cher / pas le budget', vers: 'obj_cher' },
+    { l: 'Je n\'ai pas le temps', vers: 'obj_temps' },
+    { l: 'J\'ai déjà Facebook / ma fiche Google', vers: 'obj_facebook' },
+    { l: 'Quelqu\'un s\'en occupe (neveu, ami…)', vers: 'obj_neveu' },
+    { l: 'J\'ai assez de clients', vers: 'obj_assez' },
+    { l: 'Je vais réfléchir', vers: 'obj_reflechir' },
+    { l: 'Envoyez-moi un mail', vers: 'mail' },
+    { l: 'Rappelez-moi plus tard', vers: 'rappel' },
+    { l: 'Non merci, pas intéressé', vers: 'obj_pasinteresse', ton: 'non' },
+  ].filter((r) => r.vers !== sauf);
+  const versProposition = [
+    { l: 'Oui, c\'est vrai / il écoute', vers: 'proposition', ton: 'ok', qualif: { besoin: true } },
+    { l: 'Il reste sceptique', vers: 'proposition' },
+    { l: 'J\'ai assez de clients', vers: 'obj_assez' },
+    { l: 'Non merci, pas intéressé', vers: 'obj_pasinteresse', ton: 'non' },
+  ];
+
+  return {
+    ouverture: {
+      titre: 'Ouverture',
+      dire: [`Bonjour, ${[c.pr.prenom, c.pr.nom].filter(Boolean).join(' ') || c.moi}, je crée des sites internet à ${c.maVille}. Je pourrais parler à ${c.interlocuteur} ?`],
+      conseil: 'Souris en parlant, ça s\'entend. Parle lentement : il ne t\'attendait pas.',
+      reponses: [
+        { l: 'C\'est lui / on me le passe', vers: 'permission', ton: 'ok' },
+        { l: 'C\'est à quel sujet ?', vers: 'barrage' },
+        { l: 'Il n\'est pas là / pas disponible', vers: 'absent' },
+        { l: 'Je tombe sur le répondeur', vers: 'repondeur' },
+        { l: 'Personne ne décroche', vers: 'fin_nr' },
+      ],
+    },
+    barrage: {
+      titre: 'On te demande pourquoi', objection: 'barrage',
+      dire: [`C'est au sujet de la visibilité de ${c.nom} sur Google. J'ai une idée à proposer à ${c.d ? c.d.prenom : 'votre responsable'}, j'en ai pour une minute.`],
+      conseil: 'Reste bref et sûr de toi. Ne présente pas ton offre à un employé : il dira non à la place du patron.',
+      reponses: [
+        { l: 'On me le passe', vers: 'permission', ton: 'ok' },
+        { l: 'Il n\'est pas disponible', vers: 'absent' },
+        { l: 'Envoyez un mail', vers: 'mail' },
+        { l: 'On ne veut pas de démarchage', vers: 'fin_refus', ton: 'non' },
+      ],
+    },
+    absent: {
+      titre: 'Le responsable est absent',
+      dire: [`Pas de souci. À quel moment je peux le joindre, plutôt le matin ou en fin de journée ?${c.d ? ` Et c'est bien ${c.d.prenom} ${c.d.nom} qu'il faut demander ?` : ' Et je demande qui ?'}`],
+      conseil: 'Note le créneau et le prénom dans « Notes pendant l\'appel ». Rappelle pile à l\'heure dite.',
+      reponses: [{ l: 'Il me donne un créneau', vers: 'fin_absent', ton: 'ok' }, { l: 'Il ne sait pas / raccroche', vers: 'fin_absent' }],
+    },
+    repondeur: {
+      titre: 'Répondeur (20 secondes max)',
+      dire: [`Bonjour, ${c.moi}, créateur de sites web à ${c.maVille}. ${c.reputation ? 'J\'ai vu vos excellents avis Google et j\'ai' : 'J\'ai'} préparé une idée de site pour ${c.nom}. Je vous envoie un petit message, et vous pouvez me rappeler au ${c.monTel}. Bonne journée !`],
+      conseil: 'Envoie le SMS juste après (onglet « SMS » de la fiche).',
+      reponses: [{ l: 'Message laissé', vers: 'fin_repondeur', ton: 'ok' }],
+    },
+    // Deux ouvertures alternent d'un appel à l'autre (une seule chose change), pour comparer leurs résultats :
+    //  - « permission » : on assume l'interruption et on demande 30 secondes ;
+    //  - « directe »    : on donne tout de suite la raison de l'appel.
+    // Aucune ne demande « c'est un bon moment ? » : cette question invite à répondre non.
+    permission: {
+      titre: ouverture === 'directe' ? 'La raison de ton appel' : 'Demander 30 secondes', qualif: { decideur: true },
+      dire: ouverture === 'directe'
+        ? [`Je vous appelle pour une raison précise : ${c.constat.replace(/^Par contre, /, '')}`, 'J\'ai une idée à vous montrer là-dessus. Je vous explique en une minute ?']
+        : ['Je vous appelle à l\'improviste, vous ne me connaissez pas. Vous me laissez trente secondes pour vous dire pourquoi, et vous me dites ensuite si ça vaut le coup de continuer ?'],
+      conseil: 'Dis-le lentement, sans t\'excuser. Puis tais-toi : c\'est à lui de parler.',
+      reponses: [
+        { l: 'Oui / allez-y / c\'est pour quoi ?', vers: 'accroche', ton: 'ok' },
+        { l: 'Pas maintenant', vers: 'rappel' },
+        { l: 'Non, pas intéressé', vers: 'obj_pasinteresse', ton: 'non' },
+      ],
+    },
+    accroche: {
+      titre: 'Accroche, puis ta question',
+      dire: [c.compliment, ...(ouverture === 'directe' ? [] : [c.constat]), // en ouverture directe, le constat vient d'être dit
+        `La plupart des commerçants que j'appelle me disent que leurs nouveaux clients les cherchent d'abord sur Google. Chez vous, ils vous trouvent comment, principalement ?`],
+      conseil: `${c.avis ? 'Tu cites un vrai avis : laisse un silence après, il va réagir.' : 'Astuce : ajoute un vrai avis client dans la fiche pour une accroche bien plus forte.'} Après ta question, tais-toi et écoute.`,
+      reponses: [
+        { l: 'Le bouche-à-oreille', vers: 'rep_bao' },
+        { l: 'Facebook, Instagram, Google…', vers: 'rep_reseaux' },
+        { l: 'Les gens passent devant', vers: 'rep_passage' },
+        { l: 'Je ne sais pas trop', vers: 'rep_nesaitpas' },
+        { l: 'J\'ai déjà un site', vers: 'a_un_site' },
+        { l: 'J\'ai assez de clients', vers: 'obj_assez' },
+        { l: 'Non merci, pas intéressé', vers: 'obj_pasinteresse', ton: 'non' },
+      ],
+    },
+    rep_bao: {
+      titre: 'Il vit du bouche-à-oreille',
+      dire: ['C\'est le meilleur signe de qualité.', 'Justement : quand on vous recommande, la personne vous cherche sur Google avant d\'appeler. Si elle ne trouve rien, ou qu\'elle tombe sur un concurrent, vous perdez un client qui vous était acquis.'],
+      reponses: versProposition,
+    },
+    rep_reseaux: {
+      titre: 'Il compte sur les réseaux', objection: 'facebook',
+      dire: ['C\'est très bien, gardez-les.', 'Mais vous n\'en êtes pas propriétaire, et Google met en avant les entreprises qui ont un vrai site. Le site vient compléter tout ça, il ne le remplace pas.'],
+      reponses: versProposition,
+    },
+    rep_passage: {
+      titre: 'Il compte sur le passage',
+      dire: ['Vous avez un bon emplacement, c\'est une force.', `Mais les gens qui ne passent pas devant, eux, cherchent « ${c.motRecherche} » sur leur téléphone. Aujourd'hui, ceux-là ne vous voient pas.`],
+      reponses: versProposition,
+    },
+    rep_nesaitpas: {
+      titre: 'Il ne sait pas',
+      dire: ['C\'est normal, peu de commerçants le mesurent.', 'Un site permet justement de le savoir : combien de personnes vous cherchent chaque mois, et combien vous appellent ensuite.'],
+      reponses: versProposition,
+    },
+    a_un_site: {
+      titre: 'Il dit avoir un site', objection: 'asite',
+      dire: [`Ah, je ne l'ai pas trouvé en cherchant « ${c.motRecherche} » : c'est peut-être justement le souci. C'est quelle adresse ?`, 'Il date de quand ? Vous en êtes content ?'],
+      conseil: 'Note l\'adresse du site. S\'il est vieux ou introuvable sur Google, tu as un argument pour une refonte.',
+      reponses: [
+        { l: 'Il est vieux / il n\'en est pas content', vers: 'refonte', ton: 'ok', qualif: { besoin: true } },
+        { l: 'Il en est content', vers: 'fin_content', ton: 'non' },
+      ],
+    },
+    refonte: {
+      titre: 'Proposer un regard sur son site',
+      dire: [`Je peux y jeter un œil et vous dire ce qui l'empêche de ressortir sur Google, c'est gratuit. Et je vous montre ce que donnerait une version à jour. ${rdv}`],
+      reponses: suite(),
+    },
+    proposition: {
+      titre: 'Ta proposition',
+      dire: [`Ce que je fais, ce sont des sites simples et efficaces pour les commerces du coin. Pour vous, ce serait : ${c.angle}`, `Je peux vous préparer une maquette de ce que pourrait donner votre site, et passer vous la montrer : 15 minutes, sans engagement. Plutôt ${creneaux} ?`],
+      conseil: 'Propose toujours deux créneaux précis. Ne demande jamais « quand êtes-vous disponible ? ».',
+      reponses: suite(),
+    },
+    obj_prix: {
+      titre: 'Il demande le prix', objection: 'prix',
+      dire: [`Ça dépend de ce dont vous avez besoin : un site vitrine simple démarre à ${c.prix}.`, `Mais avant de parler prix, je préfère vous montrer la maquette : vous verrez tout de suite si ça vaut le coup pour vous. ${rdv}`],
+      conseil: 'Demander le prix est un signal d\'intérêt. Donne un ordre de grandeur, puis ramène vers le rendez-vous.',
+      reponses: suite('obj_prix'),
+    },
+    obj_cher: {
+      titre: 'Objection : trop cher', objection: 'cher',
+      dire: ['Je comprends. Combien vous rapporte un nouveau client, en moyenne ?', `Donc avec quelques clients de plus sur l'année, le site est remboursé. Et je peux étaler le paiement en plusieurs fois. Regardons la maquette ensemble, ça ne vous engage à rien. ${rdv}`],
+      conseil: 'Laisse-le répondre à la question avant de continuer : c\'est lui qui fait le calcul.',
+      reponses: suite('obj_cher'),
+    },
+    obj_temps: {
+      titre: 'Objection : pas le temps', objection: 'temps',
+      dire: ['C\'est justement mon travail : je m\'occupe de tout, les textes, les photos, la mise en ligne.', `Vous, c'est 30 minutes pour me raconter votre activité, et vous validez. ${rdv}`],
+      reponses: suite('obj_temps'),
+    },
+    obj_facebook: {
+      titre: 'Objection : il a déjà Facebook / sa fiche Google', objection: 'facebook',
+      dire: ['C\'est très bien, gardez-les.', `Mais vous n'en êtes pas propriétaire, et Google met en avant les entreprises qui ont un vrai site. Le site les complète. Je vous montre la différence sur la maquette. ${rdv}`],
+      reponses: suite('obj_facebook'),
+    },
+    obj_neveu: {
+      titre: 'Objection : quelqu\'un s\'en occupe', objection: 'neveu',
+      dire: ['Super, c\'est bien d\'avoir quelqu\'un.', 'Si jamais ça traîne, gardez mon numéro. Je peux quand même vous montrer la maquette : ça pourra l\'inspirer, et vous aurez un point de comparaison. Je passe 15 minutes ?'],
+      reponses: suite('obj_neveu'),
+    },
+    obj_assez: {
+      titre: 'Objection : assez de clients', objection: 'assez',
+      dire: ['Tant mieux, c\'est bon signe !', `Un site peut aussi vous faire gagner du temps : moins d'appels pour demander les horaires ou les prix, et vous choisissez les clients qui vous intéressent. Et le jour où ça ralentit, vous êtes déjà en place. ${rdv}`],
+      reponses: suite('obj_assez'),
+    },
+    obj_reflechir: {
+      titre: 'Objection : il veut réfléchir', objection: 'reflechir',
+      dire: ['Bien sûr, c\'est normal.', `Pour réfléchir sur du concret, le plus simple est de voir la maquette : 15 minutes, et vous décidez ensuite tranquillement. ${rdv}`],
+      conseil: '« Je vais réfléchir » veut souvent dire « je n\'ai pas assez d\'éléments ». Donne-lui du concret, sans insister deux fois.',
+      reponses: suite('obj_reflechir'),
+    },
+    mail: {
+      titre: 'Il demande un mail', objection: 'mail',
+      dire: ['Avec plaisir. Pour vous envoyer quelque chose d\'utile et pas une plaquette générique : le plus important pour vous, c\'est d\'avoir plus de clients ou de gagner du temps ?', 'Et je l\'envoie à quelle adresse ?'],
+      conseil: 'Note son adresse email et sa réponse. Envoie l\'email le jour même (onglet « Email » de la fiche), et rappelle dans 3 jours.',
+      reponses: [{ l: 'Il me donne son adresse', vers: 'fin_mail', ton: 'ok' }, { l: 'Il refuse / raccroche', vers: 'fin_refus', ton: 'non' }],
+    },
+    rappel: {
+      titre: 'Convenir d\'un rappel',
+      dire: ['Bien sûr. Je vous rappelle quand ? Plutôt demain matin ou en fin de journée ?'],
+      conseil: 'Note le créneau, et rappelle à l\'heure exacte : c\'est ta première preuve de sérieux.',
+      reponses: [{ l: 'Il me donne un créneau', vers: 'fin_rappel', ton: 'ok' }, { l: 'Il esquive / « je vous rappellerai »', vers: 'fin_rappel' }],
+    },
+    obj_pasinteresse: {
+      titre: 'Objection : pas intéressé', objection: 'pasinteresse',
+      dire: ['Pas de problème. Juste pour comprendre : c\'est le site en lui-même qui ne vous intéresse pas, ou c\'est le moment qui est mal choisi ?'],
+      conseil: 'Pose la question calmement, sans forcer. Sa réponse te dit s\'il faut rappeler ou laisser tomber.',
+      reponses: [
+        { l: 'C\'est le moment qui est mal choisi', vers: 'rappel' },
+        { l: 'Je n\'en vois pas l\'utilité', vers: 'utilite' },
+        { l: 'Non, vraiment pas', vers: 'fin_refus', ton: 'non' },
+      ],
+    },
+    utilite: {
+      titre: 'Dernière tentative',
+      dire: [`Je comprends. Une seule question alors : si un nouveau client cherche « ${c.motRecherche} » ce soir, vous préférez qu'il tombe sur vous ou sur un concurrent ?`, 'Je vous montre la maquette en 15 minutes. Si ça ne vous parle pas, je ne vous rappelle plus.'],
+      reponses: [{ l: 'Bon, d\'accord', vers: 'fin_rdv', ton: 'ok', qualif: { besoin: true } }, { l: 'Non, vraiment pas', vers: 'fin_refus', ton: 'non' }],
+    },
+    fin_rdv: {
+      titre: 'Rendez-vous obtenu 🎉', qualif: { delai: true },
+      dire: ['Parfait. Je note : [jour] à [heure], chez vous. Je vous envoie un SMS de confirmation avec mon numéro.', 'Merci, et à [jour] !'],
+      conseil: 'Répète le jour et l\'heure à voix haute. Raccroche le premier, sans en rajouter.',
+    },
+    fin_rappel: { titre: 'À rappeler', dire: ['Entendu, je vous rappelle [jour] à [heure]. Merci, bonne journée !'] },
+    fin_absent: { titre: 'À rappeler (responsable absent)', dire: ['Merci beaucoup, je rappellerai à ce moment-là. Bonne journée !'] },
+    fin_mail: { titre: 'Email à envoyer', dire: ['Parfait, je vous envoie ça aujourd\'hui. Je vous rappelle dans quelques jours pour avoir votre avis. Bonne journée !'] },
+    fin_refus: { titre: 'Refus', dire: ['Pas de souci, merci pour votre temps. Bonne continuation !'], conseil: 'Reste aimable jusqu\'au bout : dans une petite ville, tout se sait. Ne le rappelle plus.' },
+    fin_content: { titre: 'Il a un site qui lui convient', dire: ['Très bien, alors je ne vous dérange pas plus. Si un jour vous voulez le rafraîchir, vous avez mon numéro. Bonne journée !'] },
+    fin_nr: { titre: 'Pas de réponse', dire: [], conseil: 'Réessaie à un autre moment de la journée. Trois tentatives à des heures différentes avant d\'abandonner.' },
+    fin_repondeur: { titre: 'Message laissé', dire: [], conseil: 'Envoie maintenant le SMS (onglet « SMS » de la fiche).' },
+  };
+}
+
+function lancerAppel(id) {
+  // On alterne les deux ouvertures d'un appel guidé à l'autre.
+  const dejaFaits = Object.values(etat.prospects).flatMap((p) => p.historique ?? []).filter((h) => h.guide).length;
+  etat.appel = { id, chemin: [{ noeud: 'ouverture' }], notes: '', debut: Date.now(), ouverture: dejaFaits % 2 ? 'directe' : 'permission' };
+  $('#appel').hidden = false;
+  rendreAppel();
+  clearInterval(lancerAppel.chrono);
+  lancerAppel.chrono = setInterval(() => {
+    const el = $('#chronoAppel');
+    if (!el || !etat.appel) return;
+    const s = Math.floor((Date.now() - etat.appel.debut) / 1000);
+    el.textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+  }, 1000);
+}
+
+function fermerAppel() {
+  clearInterval(lancerAppel.chrono);
+  etat.appel = null;
+  $('#appel').hidden = true;
+}
+
+// Ce que le parcours nous apprend : objections entendues et critères de qualification validés
+function bilanAppel(arbre) {
+  const a = etat.appel;
+  const objections = []; const qualif = {};
+  for (const etape of a.chemin) {
+    const n = arbre[etape.noeud];
+    if (n.objection && !objections.includes(n.objection)) objections.push(n.objection);
+    Object.assign(qualif, n.qualif, etape.choix?.qualif);
+  }
+  const fin = a.chemin.at(-1).noeud;
+  if (fin === 'fin_rdv' && objections.includes('prix') && !objections.includes('cher')) qualif.budget = true;
+  return { objections, qualif, fin: FINS[fin] ? fin : null, resultat: FINS[fin] ?? null };
+}
+
+function rendreAppel() {
+  const a = etat.appel;
+  const l = trouverLigne(a.id);
+  if (!l) { fermerAppel(); return; }
+  const c = contexte(l);
+  const arbre = arbreAppel(c);
+  const etape = a.chemin.at(-1);
+  const n = arbre[etape.noeud];
+  const bilan = bilanAppel(arbre);
+  const tel = l.telephone;
+
+  $('#appel').innerHTML = `<div class="appel-boite">
+    <header class="appel-tete">
+      <div style="min-width:0"><small>Appel guidé</small><h2>${esc(l.nom)}</h2></div>
+      ${tel ? `<a class="btn primaire" href="tel:${esc(tel.replace(/\s/g, ''))}">📞 ${esc(tel)}</a>` : '<span class="badge b-verifier">Pas de téléphone : cherche-le sur Google Maps</span>'}
+      <span class="chrono" id="chronoAppel">0:00</span>
+      <button class="btn fantome petit" data-appel="fermer" aria-label="Fermer">✕</button>
+    </header>
+    <div class="appel-corps">
+      <main>
+        <div class="fil">${a.chemin.map((e, i) => `<span class="${i === a.chemin.length - 1 ? 'ici' : ''}">${esc(arbre[e.noeud].titre)}</span>`).join('<i>›</i>')}</div>
+        <section class="a-dire ${bilan.fin ? `fin fin-${bilan.resultat}` : ''}">
+          <small>${bilan.fin ? 'Pour conclure' : 'À dire'} · ${esc(n.titre)}</small>
+          ${n.dire.map((p) => `<p>« ${esc(p).replace(/« /g, '“').replace(/ »/g, '”')} »</p>`).join('')}
+          ${n.conseil ? `<div class="conseil">💡 ${esc(n.conseil)}</div>` : ''}
+        </section>
+        ${n.reponses ? `<h3>Que répond-il ?</h3>
+          <div class="reponses">${n.reponses.map((r, i) => `<button type="button" class="reponse ${r.ton ?? ''}" data-reponse="${i}"><kbd>${i + 1 <= 9 ? i + 1 : ''}</kbd>${esc(r.l)}</button>`).join('')}</div>` : `
+          <div class="bilan">
+            <strong>Résultat : ${esc(LABEL_RESULTAT[bilan.resultat])}</strong>
+            ${bilan.objections.length ? `<span>Objections entendues : ${esc(bilan.objections.map((o) => OBJECTIONS[o]).join(', '))}</span>` : ''}
+            ${Object.keys(bilan.qualif).length ? `<span>Qualification : ${esc(CRITERES.filter((k) => bilan.qualif[k.v]).map((k) => k.l).join(' · '))}</span>` : ''}
+            <button class="btn primaire" type="button" data-appel="terminer">Terminer et noter l'appel</button>
+          </div>`}
+        <div class="appel-bas">
+          <button class="btn petit" type="button" data-appel="retour" ${a.chemin.length < 2 ? 'disabled' : ''}>← Revenir en arrière</button>
+          <button class="btn petit fantome" type="button" data-appel="recommencer">Recommencer</button>
+        </div>
+      </main>
+      <aside>
+        <h3>Antisèche</h3>
+        <dl class="infos">
+          ${l.dirigeant ? `<dt>Dirigeant</dt><dd><strong>${esc(`${l.dirigeant.prenom ?? ''} ${l.dirigeant.nom}`.trim())}</strong></dd>` : ''}
+          <dt>Activité</dt><dd>${esc(l.categorie)}${c.ans >= 1 ? ` · depuis ${c.ans} an${c.ans > 1 ? 's' : ''}` : ''}</dd>
+          ${l.note ? `<dt>Google</dt><dd>★ ${esc(String(l.note).replace('.', ','))} · ${esc(l.avis)} avis</dd>` : ''}
+          <dt>Web</dt><dd>${badgeSite(l)}</dd>
+          <dt>Adresse</dt><dd>${esc(l.adresse)}</dd>
+        </dl>
+        ${c.avis ? `<div class="avis-cite">« ${esc(c.avis.extrait)} »${c.avis.auteur ? `<small>${esc(c.avis.auteur)}, avis Google</small>` : '<small>Avis Google</small>'}</div>` : ''}
+        ${l.angle ? `<p class="angle">${esc(l.angle)}</p>` : ''}
+        ${l.scriptIA ? `<details class="objections"><summary>✨ Voir le script IA</summary><pre class="texte-pret" style="margin-top:8px;font-size:13px">${esc(l.scriptIA.texte).replace(/^(【[^】]+】)/gm, '<span class="etape-script">$1</span>')}</pre></details>` : ''}
+        <label class="champ"><span>Notes pendant l'appel</span>
+          <textarea class="input" id="notesAppel" placeholder="Créneau donné, adresse email, ce qu'il a dit d'important…">${esc(a.notes)}</textarea></label>
+      </aside>
+    </div>
+  </div>`;
+  $('#appel main').scrollTop = 0;
+}
+
+function choisirReponse(i) {
+  const a = etat.appel;
+  const l = trouverLigne(a.id);
+  const n = arbreAppel(contexte(l))[a.chemin.at(-1).noeud];
+  const r = n.reponses?.[i];
+  if (!r) return;
+  a.chemin.at(-1).choix = { l: r.l, qualif: r.qualif };
+  a.chemin.push({ noeud: r.vers });
+  rendreAppel();
+}
+
+function terminerAppel() {
+  const a = etat.appel;
+  const id = a.id;
+  const l = trouverLigne(id);
+  const arbre = arbreAppel(contexte(l));
+  const bilan = bilanAppel(arbre);
+  const duree = Math.max(1, Math.round((Date.now() - a.debut) / 60000));
+  const note = [a.notes.trim(), bilan.objections.length ? `Objections : ${bilan.objections.map((o) => OBJECTIONS[o]).join(', ')}.` : ''].filter(Boolean).join('\n');
+
+  const maj = { qualif: { ...etat.prospects[id]?.qualif, ...bilan.qualif } };
+  if (bilan.fin === 'fin_content') maj.siteManuel = 'oui';
+  enregistrer(id, maj);
+  // Le compte rendu s'ouvre prérempli ; ces détails seront rangés dans l'historique à l'enregistrement.
+  const parcours = a.chemin.map((e) => e.noeud);
+  etat.resumeAppel = { id, objections: bilan.objections, duree, ouverture: a.ouverture, decideur: parcours.includes('permission'), conversation: parcours.includes('accroche') };
+  fermerAppel();
+  ouvrirFiche(id);
+  $('[data-action="noter"]', $('#fiche')).click();
+  const form = $('#formContact');
+  $(`[data-groupe="resultat"] [data-v="${bilan.resultat}"]`, form).click();
+  form.elements.note.value = note;
+  (bilan.resultat === 'rdv' ? form.elements.rdvJour : form.elements.note).focus();
+  toast(bilan.resultat === 'rdv' ? 'Bravo ! Indique le jour et l\'heure, puis enregistre' : 'Vérifie le compte rendu, puis enregistre');
+}
+
+$('#appel').addEventListener('click', (e) => {
+  const rep = e.target.closest('[data-reponse]');
+  if (rep) { choisirReponse(Number(rep.dataset.reponse)); return; }
+  const action = e.target.closest('[data-appel]')?.dataset.appel;
+  if (action === 'retour') { etat.appel.chemin.pop(); delete etat.appel.chemin.at(-1).choix; rendreAppel(); }
+  if (action === 'recommencer') { etat.appel.chemin = [{ noeud: 'ouverture' }]; rendreAppel(); }
+  if (action === 'terminer') terminerAppel();
+  if (action === 'fermer' && (etat.appel.chemin.length < 2 || confirm('Fermer l\'appel guidé sans le noter ?'))) fermerAppel();
+});
+$('#appel').addEventListener('input', (e) => { if (e.target.id === 'notesAppel') etat.appel.notes = e.target.value; });
+// Touches 1 à 9 : choisir une réponse sans quitter le téléphone des yeux (sauf quand on tape dans les notes)
+document.addEventListener('keydown', (e) => {
+  if (!etat.appel || /^(TEXTAREA|INPUT)$/.test(e.target.tagName)) return;
+  if (/^[1-9]$/.test(e.key)) { e.preventDefault(); choisirReponse(Number(e.key) - 1); }
+  if (e.key === 'Backspace' && etat.appel.chemin.length > 1) { e.preventDefault(); etat.appel.chemin.pop(); delete etat.appel.chemin.at(-1).choix; rendreAppel(); }
+});
+
+// ---------------------------------------------------------------------------------------------
+// Emails de prospection : création de site (pas de site) ou refonte (site existant avec des défauts constatés)
+
+// Le site appartient-il vraiment à cette entreprise ? Oui s'il vient de sa fiche (carte ou Google) ou si tu l'as confirmé.
+// Un site seulement déduit du nom peut être celui d'un homonyme : on n'écrit jamais à son sujet sans vérification.
+const siteFiable = (l) => /^(OpenStreetMap|Fiche Google)/.test(l.site?.source ?? '') || l.siteManuel === 'oui';
+
+// Défauts vérifiables relevés sur le site existant : seuls arguments autorisés pour proposer une refonte.
+function defautsSite(l) {
+  const a = l.audit;
+  if (!a || a.injoignable || !siteFiable(l)) return [];
+  const d = [];
+  if (!a.mobile) d.push({ court: 'Pas adapté aux téléphones', phrase: 'il ne s\'adapte pas à l\'écran d\'un téléphone, alors que la plupart des gens cherchent un commerce depuis leur mobile' });
+  if (!a.https) d.push({ court: 'Pas sécurisé', phrase: 'il n\'est pas sécurisé : les navigateurs affichent « non sécurisé » à vos visiteurs' });
+  if (a.annee && a.annee <= new Date().getFullYear() - 4) d.push({ court: `Daté de ${a.annee}`, phrase: `il affiche encore l'année ${a.annee} en bas de page, ce qui donne l'impression d'un site à l'abandon` });
+  return d;
+}
+
+// Les 3 emails d'une séquence. Renvoie null s'il n'y a rien d'honnête à écrire (site existant sans défaut constaté).
+function modelesEmail(l) {
+  const c = contexte(l);
+  const moi = [c.pr.prenom, c.pr.nom].filter(Boolean).join(' ') || '[Ton prénom Nom]';
+  // « autour de » plutôt que « de … et des environs » : la phrase reste correcte quand le profil indique deux villes.
+  const zone = c.pr.ville && (l.pays ?? 'fr') === 'fr' ? ` autour de ${c.pr.ville}` : '';
+  // L'expéditeur se présente dans la signature : l'email, lui, commence par la situation du commerçant.
+  const signature = [moi, `Créateur de sites internet${c.pr.ville ? ` à ${c.pr.ville}` : ''}`, [c.monTel, c.pr.site].filter(Boolean).join(' · ')].join('\n');
+  // Transparence : dire d'où vient l'adresse (obligatoire quand on ne l'a pas reçue de la personne elle-même).
+  const origine = { carte: 'J\'ai trouvé votre adresse sur la fiche publique de votre commerce (OpenStreetMap). ', site: 'J\'ai trouvé votre adresse sur votre site. ', manuel: '' }[l.emailSource]
+    ?? 'J\'ai trouvé votre adresse dans les informations publiques de votre commerce. ';
+  const stop = `${origine}Si vous préférez que je ne vous écrive plus, répondez simplement « stop ».`;
+  const question = 'Je vous la prépare ?'; // une seule demande, à laquelle on répond en un mot
+  // Une vraie réalisation, si le profil en indique une : une preuve concrète vaut mieux que dix arguments.
+  const reference = c.pr.reference?.trim() ? [c.pr.reference.trim().replace(/[.\s]*$/, '.')] : [];
+  // Objets : 4 mots et 35 caractères au plus (au-delà, ils sont coupés sur téléphone), sans majuscule ni ponctuation.
+  // Deux formulations tournent d'un prospect à l'autre : l'onglet Emails compare leurs taux de réponse.
+  const alternance = [...String(l.id)].reduce((a, ch) => (a * 31 + ch.charCodeAt(0)) >>> 0, 7);
+  const choisir = (variantes) => { const v = variantes.filter((x) => x.objet.length <= 35).slice(0, 2); return v[alternance % v.length]; };
+  let type; let variante; let coeur; let precision;
+
+  if (l.aUnSite) {
+    const defauts = defautsSite(l);
+    if (!defauts.length || !l.site?.url) return null;
+    type = 'refonte';
+    let hote = l.site.url;
+    try { hote = new URL(l.site.url).host.replace(/^www\./, ''); } catch { /* adresse inhabituelle : on la garde telle quelle */ }
+    variante = !l.audit.mobile ? { cle: 'mobile', objet: 'votre site sur téléphone' }
+      : !l.audit.https ? { cle: 'securite', objet: 'votre site non sécurisé' } : { cle: 'date', objet: 'votre site internet' };
+    coeur = [
+      defauts.length === 1
+        ? `Un point sur votre site ${hote} : ${defauts[0].phrase}.`
+        : `${defauts.length === 2 ? 'Deux' : 'Trois'} points sur votre site ${hote} :\n${defauts.map((d, i) => `- ${d.phrase}${i === defauts.length - 1 ? '.' : ' ;'}`).join('\n')}`,
+      'Dans ce cas, le visiteur repart en quelques secondes et appelle le commerce suivant, sans que vous le sachiez.', '',
+      `Je refais ce genre de site pour les commerces${zone}, en reprenant vos textes et vos photos. Je peux vous préparer gratuitement une maquette de la version à jour, pour que vous compariez les deux.`,
+      ...reference,
+    ];
+    precision = 'Une précision sur mon message : vous n\'auriez rien à refaire. Je reprends votre adresse de site, vos textes et vos photos, et vous voyez la maquette avant de décider quoi que ce soit. Si elle ne vous convainc pas, on en reste là.';
+  } else {
+    type = 'creation';
+    variante = choisir([
+      ...(c.reputation ? [{ cle: 'avis', objet: 'vos avis Google' }] : []),
+      { cle: 'recherche', objet: `${c.terme} à ${c.ville}` }, // la recherche que fait son futur client
+      { cle: 'commerce', objet: 'votre commerce sur Google' },
+    ]);
+    // Premier email volontairement court, sans offre ni argumentaire : la version longue (« je crée des sites… gratuitement
+    // une maquette… ») a été classée en spam par Gmail aux essais du 13 octobre 2026. La maquette n'est proposée qu'à la relance.
+    const constat = `quand on cherche « ${c.motRecherche} » sur Google, on ne trouve pas de site au nom de ${l.nom}${c.reseauxSeuls ? ` (seulement ${pageReseau(l.site.url).phrase})` : ''}. Est-ce un choix de votre part ?`;
+    const eloge = [c.reputation ? `${l.nom} a une note de ${String(l.note).replace('.', ',')}/5 sur Google, avec ${l.avis} avis.` : '', c.citation ? c.citation.replace(/^L'un d'eux écrit/, 'Un de vos clients écrit') : ''].filter(Boolean).join(' ');
+    coeur = [
+      eloge ? `${eloge}\nPourtant, ${constat}` : constat.charAt(0).toUpperCase() + constat.slice(1), '',
+      `Je fais des sites pour les commerces${zone}. Si le sujet vous intéresse, je vous montre ce que ça donnerait pour vous.`,
+      ...reference,
+    ];
+    precision = `Je me permets de revenir vers vous. Si vous voulez voir à quoi ressemblerait un site pour ${l.nom}, je peux vous préparer une maquette à partir des informations publiques sur votre commerce. Vous la regardez quand vous voulez, et si elle ne vous plaît pas, on en reste là.`;
+  }
+  // Création : pas de question finale (elle est déjà dans le constat) et une signature réduite au nom et au téléphone.
+  const signatureCourte = [moi, [c.monTel, c.pr.site].filter(Boolean).join(' · ')].filter(Boolean).join('\n');
+  const corps = (type === 'creation' ? [c.bonjour, '', ...coeur, '', signatureCourte, '', stop] : [c.bonjour, '', ...coeur, '', question, '', signature, '', stop]).join('\n');
+  const relance = [c.bonjour, '', precision, '', question, '', signature, '', stop].join('\n');
+  const dernier = [c.bonjour, '', 'Je ne veux pas encombrer votre boîte : c\'est mon dernier message.',
+    `Si ${type === 'refonte' ? 'refaire votre site' : `un site pour ${l.nom}`} devient d'actualité, répondez à celui-ci quand vous voulez.`, '', 'Bonne continuation,', signature].join('\n');
+  // Les relances gardent le même objet : le serveur les envoie comme de vraies réponses au premier email (même fil).
+  const { objet } = variante;
+  return { type, variante: variante.cle, etapes: [{ objet, corps, delaiJours: 0 }, { objet, corps: relance, delaiJours: 4 }, { objet, corps: dernier, delaiJours: 7 }] };
+}
+
+const ADRESSE_VALIDE = /^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i;
+// Essais du 13 octobre 2026 : un premier email de prospection arrive en indésirables dans les boîtes Gmail (même neuves),
+// mais en réception chez La Poste. Ces adresses sont signalées et jamais cochées d'office : mieux vaut appeler d'abord.
+const ADRESSE_GMAIL = /@(gmail|googlemail)\.com$/i;
+// Adresses d'exemple laissées par les modèles de sites (info@demolink.org…) : elles n'appartiennent pas au commerce.
+const ADRESSE_FACTICE = /@(demolink|mysite|yoursite|yourwebsite|yourdomain|votresite|templatemonster|company|website|domain|example|exemple)\./i;
+const WEBMAILS = /@(gmail|googlemail|hotmail|outlook|live|msn|yahoo|ymail|orange|wanadoo|free|sfr|neuf|laposte|bbox|aliceadsl|aol|icloud|me|numericable|club-internet|gmx|protonmail|proton)\.[a-z.]+$/i;
+// Une adresse lue sur un site n'est pas toujours celle du commerce : autre domaine que le site, ou page hébergée chez une
+// plateforme (le 13 octobre 2026, un email est parti à info@ivof.com au lieu du commerce). On prévient, sans bloquer.
+function douteAdresse(l) {
+  if (l.emailSource !== 'site' || !l.site?.url || !l.email) return '';
+  let u;
+  try { u = new URL(l.site.url); } catch { return ''; }
+  const hote = u.host.replace(/^www\./, '').toLowerCase();
+  const domaine = l.email.split('@')[1].toLowerCase();
+  const memeDomaine = hote === domaine || hote.endsWith(`.${domaine}`) || domaine.endsWith(`.${hote}`);
+  if (!memeDomaine) return WEBMAILS.test(l.email) ? '' : `Adresse sur un autre domaine que son site (${hote}) : vérifie qu'elle est bien à lui.`;
+  if (hote !== domaine && u.pathname.replace(/\/$/, '')) return `Sa page est hébergée sur un site plus large (${domaine}) : l'adresse est peut-être celle de la plateforme.`;
+  return '';
+}
+const ADRESSE_GENERIQUE = /^(info|infos|contact|hello|bonjour|accueil|salon|shop|boutique|office|bureau|mail|welcome|reception|admin|commercial|secretariat|reservation|reservations|booking)@/i;
+const lienMessagerie = (email, e) => `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(e.objet)}&body=${encodeURIComponent(e.corps)}`;
+const profilComplet = () => { const p = etat.config.profil ?? {}; return Boolean(p.prenom && p.nom && p.telephone); };
+
+// Qui peut recevoir un premier email : adresse connue, jamais contacté par email, pas de refus, et un texte honnête possible.
+function candidatsEmail() {
+  const e = etat.emails;
+  const vus = new Set(); const liste = [];
+  const sources = [...(etat.recherche?.lignes ?? []), ...Object.entries(etat.prospects).filter(([, p]) => p.ligne).map(([id, p]) => ({ ...p.ligne, id }))];
+  for (const brute of sources) {
+    if (vus.has(brute.id)) continue;
+    vus.add(brute.id);
+    const l = fusion(brute);
+    if (!ADRESSE_VALIDE.test(l.email) || ADRESSE_FACTICE.test(l.email) || e.sequences[l.id] || e.stop.includes(l.email.toLowerCase())) continue;
+    if (['refus', 'signe'].includes(l.statut) || l.site?.statut === 'franchise') continue;
+    // Hors de France, écrire sans accord n'est en général admis que vers une adresse générique (info@, contact@…), pas nominative.
+    // Suisse : la loi contre la concurrence déloyale (art. 3 let. o) exige l'accord préalable du destinataire pour la publicité
+    // envoyée en nombre par email. On n'y écrit donc qu'aux adresses que le commerçant a données lui-même (saisie manuelle).
+    if (l.pays === 'ch' && l.emailSource !== 'manuel') { liste.ecartesSuisse = (liste.ecartesSuisse ?? 0) + 1; continue; }
+    if ((l.pays ?? 'fr') !== 'fr' && l.emailSource !== 'manuel' && !ADRESSE_GENERIQUE.test(l.email)) { liste.ecartesEtranger = (liste.ecartesEtranger ?? 0) + 1; continue; }
+    const m = modelesEmail(l);
+    if (m) liste.push({ l, m });
+  }
+  const { ecartesEtranger = 0, ecartesSuisse = 0 } = liste;
+  return Object.assign(liste.sort((a, b) => a.m.type.localeCompare(b.m.type) || a.l.classement.localeCompare(b.l.classement)), { ecartesEtranger, ecartesSuisse });
+}
+
+// Résultats par formulation d'objet : sert à voir laquelle obtient des réponses (à lire avec prudence sous 50 envois).
+const NOM_VARIANTE = { avis: '« vos avis Google »', recherche: '« [métier] à [ville] »', commerce: '« votre commerce sur Google »', mobile: '« votre site sur téléphone »', securite: '« votre site non sécurisé »', date: '« votre site internet »' };
+function resultatsEmails(sequences) {
+  const groupes = {};
+  for (const s of sequences) {
+    if (!s.etapes.some((e) => e.statut === 'envoye')) continue;
+    const cle = `${s.type === 'refonte' ? 'Refonte' : 'Création'} · ${NOM_VARIANTE[s.variante] ?? 'ancien objet'}`;
+    const g = groupes[cle] ??= { envoyes: 0, reponses: 0, refus: 0, rebonds: 0 };
+    g.envoyes++;
+    if (s.arret === 'repondu') g.reponses++;
+    if (s.arret === 'stop') g.refus++;
+    if (s.arret === 'rebond') g.rebonds++;
+  }
+  const lignes = Object.entries(groupes);
+  if (!lignes.length) return '';
+  const total = lignes.reduce((a, [, g]) => a + g.envoyes, 0);
+  return `<div class="bloc-emails"><div class="titre-bloc"><h3>Résultats</h3></div>
+    <div class="tableau"><table><thead><tr><th>Proposition · objet</th><th>Prospects contactés</th><th>Réponses</th><th>Refus</th><th>Adresses invalides</th></tr></thead><tbody>
+    ${lignes.map(([cle, g]) => `<tr><td>${esc(cle)}</td><td>${g.envoyes}</td><td><strong>${g.reponses}</strong> <span class="vide">(${Math.round((g.reponses / g.envoyes) * 100)} %)</span></td><td>${g.refus}</td><td>${g.rebonds}</td></tr>`).join('')}
+    </tbody></table></div>
+    <p class="sous" style="margin:8px 0 0">${total < 50 ? `Seulement ${total} prospect${total > 1 ? 's' : ''} contacté${total > 1 ? 's' : ''} : trop peu pour comparer les objets. Attends une cinquantaine d'envois par formulation avant de conclure.` : 'Compare les taux de réponse : c\'est le seul chiffre fiable (les ouvertures ne se mesurent pas honnêtement).'}
+      Si plus de 2 ou 3 adresses sur 100 sont invalides, ou si quelqu'un se plaint, ralentis : c'est ce qui abîme la réputation de ta boîte mail.</p></div>`;
+}
+
+async function chargerEmails() {
+  etat.emails = await api('/api/emails');
+  if (etat.vue === 'emails') rendreEmails();
+}
+
+function rendreEmails() {
+  const e = etat.emails;
+  if (!e) return;
+  const candidats = candidatsEmail();
+  etat.selectionEmails ??= new Set();
+  for (const id of etat.selectionEmails) if (!candidats.some((x) => x.l.id === id)) etat.selectionEmails.delete(id);
+  const sitesAAnalyser = (etat.recherche?.lignes ?? []).filter((l) => l.site?.statut === 'oui' && l.site.url && !l.audit).length;
+  const avecSite = (etat.recherche?.lignes ?? []).map(fusion).filter((l) => l.aUnSite && l.site?.statut === 'oui' && l.audit && !l.audit.injoignable);
+  const sitesSansDefaut = avecSite.filter((l) => siteFiable(l) && ADRESSE_VALIDE.test(l.email) && !defautsSite(l).length).length;
+  const sitesAVerifier = avecSite.filter((l) => !siteFiable(l)).length;
+  const seqs = Object.values(e.sequences);
+  const enCours = seqs.filter((s) => !s.arret).sort((a, b) => (a.prochaine?.due ?? '').localeCompare(b.prochaine?.due ?? ''));
+  const finies = seqs.filter((s) => s.arret).sort((a, b) => b.cree.localeCompare(a.cree));
+  const reste = Math.max(0, e.parJour - e.envoyesAujourdhui);
+  const maintenant = new Date().toISOString();
+  const ARRETS = { repondu: 'A répondu', stop: 'Ne plus contacter', termine: 'Séquence terminée, sans réponse', rebond: 'Adresse invalide' };
+
+  const ligneCandidat = ({ l, m }) => {
+    const ouvert = etat.apercuEmail === l.id;
+    const aVerifier = ADRESSE_GMAIL.test(l.email) || douteAdresse(l) || (m.type !== 'refonte' && l.siteManuel !== 'non');
+    return `<tr data-id="${esc(l.id)}" class="${aVerifier ? 'l-orange' : 'l-vert'}">
+      <td><input type="checkbox" data-coche="${esc(l.id)}" ${etat.selectionEmails.has(l.id) ? 'checked' : ''} aria-label="Sélectionner"></td>
+      <td><span class="nom">${esc(l.nom)}</span><span class="sous">${esc(l.categorie)} · ${esc(l.email)}</span>${ADRESSE_GMAIL.test(l.email) ? '<span class="sous" style="color:var(--warm)">Adresse Gmail : risque d\'arriver en indésirables. Appelle d\'abord.</span>' : ''}${douteAdresse(l) ? `<span class="sous" style="color:var(--warm)">${esc(douteAdresse(l))}</span>` : ''}</td>
+      <td><span class="badge ${aVerifier ? 'c-orange' : 'c-vert'}">${aVerifier ? 'À vérifier' : 'Prêt à envoyer'}</span> <span class="sous">${m.type === 'refonte' ? 'Refonte' : 'Création'}</span>
+        ${m.type === 'refonte' ? `<span class="sous">${esc(defautsSite(l).map((d) => d.court).join(' · '))}</span>`
+          : l.siteManuel === 'non' ? '' : `<span class="sous" style="color:var(--warm)">Absence de site non vérifiée</span>`}</td>
+      <td class="adr">${esc(m.etapes[0].objet)}</td>
+      <td style="white-space:nowrap">
+        <button class="btn petit fantome" type="button" data-apercu="${esc(l.id)}">${ouvert ? 'Fermer' : 'Lire'}</button>
+        <a class="btn petit" href="${esc(lienMessagerie(l.email, m.etapes[0]))}" data-manuel="${esc(l.id)}" title="Ouvre l'email dans ta messagerie : c'est toi qui l'envoies">Ma messagerie</a>
+      </td></tr>
+      ${ouvert ? `<tr class="apercu"><td></td><td colspan="4"><pre class="texte-pret">${esc(`Objet : ${m.etapes[0].objet}\n\n${m.etapes[0].corps}`)}</pre>
+        <p class="sous" style="margin:8px 0 0">Puis, sans réponse : une relance 4 jours après, et un dernier message 7 jours plus tard.
+        <a href="${esc(l.mapsUrl)}" target="_blank" rel="noopener">Vérifier sur Google Maps</a> · ${e.configure ? `<a href="#" data-essai="${esc(l.id)}">Me l'envoyer pour voir</a> · ` : ''} <a href="#" data-fiche="${esc(l.id)}">Ouvrir la fiche</a></p></td></tr>` : ''}`;
+  };
+
+  const ligneSequence = (s) => {
+    const p = s.prochaine;
+    const etape = p && s.etapes[p.n];
+    const envoyes = s.etapes.filter((x) => x.statut === 'envoye');
+    const due = p && p.due <= maintenant;
+    const aLaMain = p && (s.manuel || (p.n > 0 && !e.relancesAuto && !etape.forcee));
+    let suite = '';
+    if (etape?.statut === 'erreur') suite = `<span class="relance-due">Échec : ${esc(etape.erreur)}</span>`;
+    else if (p) suite = `${['1er email', 'Relance', 'Dernier message'][p.n]} ${due ? (aLaMain ? 'à envoyer' : 'en attente d\'envoi') : `le ${esc(dateCourte(p.due))}`}`;
+    // Couleur de la ligne : vert = a répondu ou envoyé, bleu = en file, orange = à faire à la main, rouge = échec ou adresse à ne plus utiliser, gris = terminé.
+    const [couleur, libelle] = s.arret === 'repondu' ? ['vert', 'A répondu']
+      : ['stop', 'rebond'].includes(s.arret) ? ['rouge', ARRETS[s.arret]]
+        : s.arret ? ['gris', ARRETS[s.arret] ?? s.arret]
+          : etape?.statut === 'erreur' ? ['rouge', 'Échec d\'envoi']
+            : aLaMain && due ? ['orange', 'À envoyer à la main']
+              : envoyes.length ? ['vert', 'Envoyé'] : ['bleu', 'En file d\'attente'];
+    return `<tr class="l-${couleur}">
+      <td><span class="nom">${esc(s.nom)}</span><span class="sous">${esc(s.email)} · ${s.type === 'refonte' ? 'Refonte' : 'Création'}</span></td>
+      <td>${envoyes.length}/${s.etapes.length} envoyé${envoyes.length > 1 ? 's' : ''}<span class="sous">${envoyes.length ? `dernier le ${esc(dateCourte(envoyes.at(-1).date))}` : 'rien encore'}</span></td>
+      <td><span class="badge c-${couleur}">${esc(libelle)}</span>${s.arret ? '' : (etape?.statut === 'erreur' ? suite : `<span class="sous">${suite}</span>`)}</td>
+      <td style="white-space:nowrap;text-align:right">
+        ${etape?.statut === 'erreur' ? `<button class="btn petit" type="button" data-seq="${esc(s.id)}" data-faire="reessayer">Réessayer</button>` : ''}
+        ${!s.arret && aLaMain && due ? (s.manuel
+          ? `<a class="btn petit" href="${esc(lienMessagerie(s.email, etape))}" data-seq="${esc(s.id)}" data-faire="marquer-envoye">Ma messagerie</a>`
+          : `<button class="btn petit" type="button" data-seq="${esc(s.id)}" data-faire="relancer">Envoyer la relance</button>`) : ''}
+        ${!s.arret ? `<button class="btn petit" type="button" data-seq="${esc(s.id)}" data-faire="repondu">A répondu</button>
+          <button class="btn petit fantome" type="button" data-seq="${esc(s.id)}" data-faire="stop">Ne plus contacter</button>
+          <button class="btn petit fantome" type="button" data-seq="${esc(s.id)}" data-faire="rebond" title="Tu as reçu un message d'erreur : cette adresse n'existe pas">Adresse invalide</button>` : ''}
+        ${!s.arret && !envoyes.length ? `<button class="btn petit fantome" type="button" data-seq="${esc(s.id)}" data-faire="supprimer">Annuler</button>` : ''}
+        <button class="btn petit fantome" type="button" data-fiche="${esc(s.id)}">Fiche</button>
+      </td></tr>`;
+  };
+
+  $('#vue-emails').innerHTML = `
+    <div class="entete-resultats" style="margin-top:0"><h2>Emails de prospection</h2>
+      <span class="date">${e.configure
+        ? `Envoi automatique activé · ${e.envoyesAujourdhui}/${e.parJour} envoyés aujourd'hui${e.parJour < e.parJourMax ? ` (montée progressive vers ${e.parJourMax} par jour)` : ''} · du lundi au vendredi, 8 h 30 à 18 h 30, un email par minute au plus`
+        : 'Envoi automatique non configuré : tu peux envoyer depuis ta messagerie, ou brancher ta boîte mail dans Réglages'}</span></div>
+    <p class="legende">Couleurs :
+      <span class="badge c-vert">Prêt, envoyé ou répondu</span>
+      <span class="badge c-orange">À vérifier ou à faire toi-même</span>
+      <span class="badge c-bleu">En file d\'attente</span>
+      <span class="badge c-rouge">Échec ou adresse à ne plus utiliser</span>
+      <span class="badge c-gris">Terminé sans réponse</span></p>
+    ${!profilComplet() ? '<div class="alerte">Complète d\'abord ton profil dans l\'onglet Profil (prénom, nom, téléphone) : sans lui, les emails contiennent des trous comme « [Ton prénom Nom] » et l\'outil refuse de les envoyer.</div>' : ''}
+
+    <div class="bloc-emails">
+      <div class="titre-bloc"><h3>À envoyer <span class="vide">(${candidats.length})</span></h3>
+        <div class="droite">
+          ${sitesAAnalyser ? `<button class="btn petit" type="button" id="analyserSites">Chercher les emails sur les ${sitesAAnalyser} sites de la recherche affichée</button>` : ''}
+          ${candidats.length ? `<button class="btn petit fantome" type="button" id="toutCocher">Tout cocher</button>
+          <button class="btn petit primaire" type="button" id="envoyerSelection" ${etat.selectionEmails.size && e.configure && profilComplet() ? '' : 'disabled'}>Envoyer la sélection (${etat.selectionEmails.size})</button>` : ''}
+        </div></div>
+      <p class="sous" id="messageEmails" style="margin:0 0 10px">${etat.messageEmails ?? `Entreprises de la recherche affichée et de « Mes prospects » dont l'email est connu. Relis chaque email (bouton « Lire ») avant de valider.${
+        sitesSansDefaut ? ` ${sitesSansDefaut} site${sitesSansDefaut > 1 ? 's' : ''} sans défaut constaté ${sitesSansDefaut > 1 ? 'ne sont' : 'n\'est'} pas proposé${sitesSansDefaut > 1 ? 's' : ''} : l'outil n'invente pas d'argument.` : ''}${
+        sitesAVerifier ? ` ${sitesAVerifier} site${sitesAVerifier > 1 ? 's ont été déduits' : ' a été déduit'} du nom de l'entreprise et ${sitesAVerifier > 1 ? 'peuvent' : 'peut'} appartenir à un homonyme : filtre « Avec site » dans Rechercher, ouvre la fiche, et clique sur « Il a un site » si c'est bien le leur.` : ''}${
+        candidats.ecartesEtranger ? ` ${candidats.ecartesEtranger} adresse${candidats.ecartesEtranger > 1 ? 's nominatives hors de France ne sont pas proposées' : ' nominative hors de France n\'est pas proposée'} : sans accord, on n'y écrit qu'aux adresses génériques (info@, contact@).` : ''}${
+        candidats.ecartesSuisse ? ` ${candidats.ecartesSuisse} adresse${candidats.ecartesSuisse > 1 ? 's en Suisse ne sont pas proposées' : ' en Suisse n\'est pas proposée'} : la loi suisse demande l'accord du commerçant avant tout email de prospection. Appelle d'abord, puis saisis l'adresse qu'il te donne.` : ''}${
+        e.configure && candidats.length > reste ? ` Il reste ${reste} envoi${reste > 1 ? 's' : ''} aujourd'hui : le surplus partira les jours suivants.` : ''}`}</p>
+      <div class="tableau">${candidats.length ? `<table><thead><tr><th style="width:36px"></th><th>Entreprise</th><th>Proposition</th><th>Objet</th><th></th></tr></thead>
+        <tbody>${candidats.slice(0, 200).map(ligneCandidat).join('')}</tbody></table>`
+        : `<div class="vide-tableau">Personne à contacter pour l'instant. Lance une recherche, puis ${sitesAAnalyser ? 'clique sur « Chercher les emails » ci-dessus' : 'note une adresse email dans la fiche d\'un prospect'}.</div>`}</div>
+    </div>
+
+    <div class="bloc-emails">
+      <div class="titre-bloc"><h3>En cours <span class="vide">(${enCours.length})</span></h3>
+        <label class="sous" style="display:flex;gap:8px;align-items:center;cursor:pointer"><input type="checkbox" id="relancesAuto" ${e.relancesAuto ? 'checked' : ''}> Envoyer les relances automatiquement</label></div>
+      <div class="tableau">${enCours.length ? `<table><thead><tr><th>Entreprise</th><th>Envoyés</th><th>Prochaine étape</th><th></th></tr></thead><tbody>${enCours.map(ligneSequence).join('')}</tbody></table>`
+        : '<div class="vide-tableau">Aucune séquence en cours.</div>'}</div>
+      <p class="sous" style="margin:8px 0 0">L'outil ne lit pas ta boîte de réception. Quand un prospect te répond, clique sur « A répondu » pour arrêter ses relances, ou sur « Ne plus contacter » s'il refuse.</p>
+    </div>
+
+    ${resultatsEmails(seqs)}
+
+    ${finies.length ? `<div class="bloc-emails"><div class="titre-bloc"><h3>Terminés <span class="vide">(${finies.length})</span></h3></div>
+      <div class="tableau"><table><tbody>${finies.slice(0, 100).map(ligneSequence).join('')}</tbody></table></div></div>` : ''}
+
+    <div class="bloc-emails">
+      <div class="titre-bloc"><h3>Ne plus contacter <span class="vide">(${e.stop.length})</span></h3></div>
+      <p class="sous" style="margin:0 0 10px">Ces adresses ne recevront plus jamais d'email de l'outil. Ajoute ici toute personne qui te demande d'arrêter.</p>
+      <form class="ligne-actions" id="formStop" style="margin:0"><input class="input" name="email" type="email" placeholder="adresse@exemple.fr" style="max-width:320px" required>
+        <button class="btn" type="submit">Ajouter à la liste</button></form>
+      ${e.stop.length ? `<p class="sous" style="margin:10px 0 0">${e.stop.map((x) => `${esc(x)} <a href="#" data-retirer="${esc(x)}" title="Retirer de la liste">×</a>`).join(' · ')}</p>` : ''}
+    </div>`;
+}
+
+async function creerSequences(candidats, manuel = false) {
+  const items = candidats.map(({ l, m }) => ({ id: l.id, nom: l.nom, email: l.email, type: m.type, variante: m.variante, etapes: m.etapes, manuel, ligne: { ...(etat.recherche?.lignes.find((x) => x.id === l.id) ?? etat.prospects[l.id]?.ligne), id: undefined } }));
+  const r = await api('/api/emails/sequences', { method: 'POST', body: JSON.stringify({ items }) });
+  etat.messageEmails = r.refuses.length ? `Non pris en compte : ${r.refuses.map((x) => `${esc(x.nom)} (${esc(x.raison)})`).join(' ; ')}` : null;
+  etat.selectionEmails?.clear();
+  etat.prospects = await api('/api/prospects');
+  await chargerEmails();
+  majCompteur();
+  return r;
+}
+
+$('#vue-emails').addEventListener('click', async (ev) => {
+  const t = ev.target;
+  const fiche = t.closest('[data-fiche]');
+  if (fiche) { ev.preventDefault(); if (trouverLigne(fiche.dataset.fiche)) ouvrirFiche(fiche.dataset.fiche); else toast('Fiche introuvable : relance la recherche correspondante'); return; }
+  const essai = t.closest('[data-essai]');
+  if (essai) {
+    ev.preventDefault();
+    const c = candidatsEmail().find((x) => x.l.id === essai.dataset.essai);
+    const a = prompt('À quelle adresse à toi envoyer cet exemplaire ?\n\nChoisis une AUTRE boîte que celle qui envoie (une adresse Outlook, Orange, ou un second compte Gmail), puis regarde s\'il arrive en réception ou en spam.', localStorage.getItem('adresseEssai') ?? '');
+    if (!c || !a) return;
+    localStorage.setItem('adresseEssai', a.trim());
+    const r = await api('/api/emails/essai', { method: 'POST', body: JSON.stringify({ a: a.trim(), objet: c.m.etapes[0].objet, corps: c.m.etapes[0].corps }) });
+    toast(r.ok ? 'Exemplaire envoyé : regarde où il arrive' : r.erreur);
+    return;
+  }
+  const apercu = t.closest('[data-apercu]');
+  if (apercu) { etat.apercuEmail = etat.apercuEmail === apercu.dataset.apercu ? null : apercu.dataset.apercu; rendreEmails(); return; }
+  if (t.closest('#toutCocher')) { const c = candidatsEmail().filter((x) => !ADRESSE_GMAIL.test(x.l.email) && !douteAdresse(x.l)); const tout = c.length > 0 && c.every((x) => etat.selectionEmails.has(x.l.id)); etat.selectionEmails = new Set(tout ? [] : c.map((x) => x.l.id)); rendreEmails(); return; }
+  const manuel = t.closest('[data-manuel]');
+  if (manuel) { // le lien ouvre la messagerie ; on demande ensuite si l'email est bien parti
+    setTimeout(async () => {
+      if (!confirm('As-tu envoyé cet email depuis ta messagerie ?\n\nOK = je le note comme envoyé (les relances te seront proposées ici).\nAnnuler = je ne note rien.')) return;
+      const c = candidatsEmail().find((x) => x.l.id === manuel.dataset.manuel);
+      if (c) { const r = await creerSequences([c], true); toast(r.crees ? 'Email noté comme envoyé' : 'Non noté : voir le message'); }
+    }, 800);
+    return;
+  }
+  if (t.closest('#envoyerSelection')) {
+    const choisis = candidatsEmail().filter((x) => etat.selectionEmails.has(x.l.id));
+    const nonVerifies = choisis.filter((x) => x.m.type === 'creation' && x.l.siteManuel !== 'non').length;
+    if (!confirm(`Envoyer ${choisis.length} email${choisis.length > 1 ? 's' : ''} depuis ta boîte mail ?\n\nPour chacun, sans réponse, une relance partira 4 jours après, puis un dernier message 7 jours plus tard.`
+      + (nonVerifies ? `\n\nAttention : pour ${nonVerifies} d'entre eux, l'absence de site n'a pas été vérifiée à la main.` : ''))) return;
+    const r = await creerSequences(choisis);
+    toast(`${r.crees} email${r.crees > 1 ? 's' : ''} en file d'envoi${etat.emails.ouvrable ? '' : ' : départ à la prochaine heure de bureau'}`);
+    return;
+  }
+  if (t.closest('#analyserSites')) {
+    const b = t.closest('#analyserSites');
+    b.disabled = true; b.textContent = 'Lecture des sites en cours… (1 à 2 minutes)';
+    const r = await api('/api/emails/analyser-sites', { method: 'POST', body: JSON.stringify({ id: etat.recherche.id }) });
+    if (r.ok) {
+      const id = etat.recherche.id;
+      etat.recherche = await api(`/api/recherches/${encodeURIComponent(id)}`);
+      etat.messageEmails = `${r.analyses} sites lus, ${r.trouves} adresse${r.trouves > 1 ? 's' : ''} email trouvée${r.trouves > 1 ? 's' : ''}.${r.restants ? ` Il en reste ${r.restants} : clique à nouveau pour continuer.` : ''}`;
+    } else etat.messageEmails = esc(r.message);
+    rendreEmails();
+    return;
+  }
+  const retirer = t.closest('[data-retirer]');
+  if (retirer) { ev.preventDefault(); await api('/api/emails/stop', { method: 'POST', body: JSON.stringify({ email: retirer.dataset.retirer, retirer: true }) }); await chargerEmails(); return; }
+  const seq = t.closest('[data-seq]');
+  if (seq) {
+    const { faire } = seq.dataset;
+    if (faire === 'stop' && !confirm('Ne plus jamais écrire à cette adresse ? Le prospect passera en « Refus ».')) return;
+    if (faire === 'marquer-envoye') { // lien vers la messagerie : on confirme après coup
+      setTimeout(async () => {
+        if (!confirm('As-tu envoyé cette relance depuis ta messagerie ?')) return;
+        await api('/api/emails/action', { method: 'POST', body: JSON.stringify({ id: seq.dataset.seq, action: faire }) });
+        etat.prospects = await api('/api/prospects'); await chargerEmails();
+      }, 800);
+      return;
+    }
+    const r = await api('/api/emails/action', { method: 'POST', body: JSON.stringify({ id: seq.dataset.seq, action: faire }) });
+    if (!r.ok) toast(r.message);
+    else toast({ repondu: 'Relances arrêtées', stop: 'Ajouté à « ne plus contacter »', rebond: 'Adresse notée comme invalide', relancer: 'La relance part dans la minute (aux heures de bureau)', reessayer: 'Nouvel essai dans la minute', supprimer: 'Envoi annulé' }[faire] ?? 'Fait');
+    etat.prospects = await api('/api/prospects');
+    await chargerEmails(); majCompteur();
+  }
+});
+$('#vue-emails').addEventListener('change', async (ev) => {
+  if (ev.target.dataset.coche) { etat.selectionEmails[ev.target.checked ? 'add' : 'delete'](ev.target.dataset.coche); rendreEmails(); }
+  if (ev.target.id === 'relancesAuto') { await api('/api/config', { method: 'PUT', body: JSON.stringify({ relancesAuto: ev.target.checked }) }); await chargerEmails(); toast(ev.target.checked ? 'Relances automatiques activées' : 'Relances automatiques coupées'); }
+});
+$('#vue-emails').addEventListener('submit', async (ev) => {
+  ev.preventDefault();
+  if (ev.target.id !== 'formStop') return;
+  const r = await api('/api/emails/stop', { method: 'POST', body: JSON.stringify({ email: ev.target.elements.email.value }) });
+  toast(r.ok ? 'Adresse ajoutée à « ne plus contacter »' : r.message);
+  await chargerEmails();
+});
+setInterval(() => { if (etat.vue === 'emails' && !document.hidden && !etat.apercuEmail) chargerEmails(); }, 60000);
+
+// Enregistrement des modifications d'un prospect
+const minuteursSauvegarde = {};
+function enregistrer(id, maj, { differe = false } = {}) {
+  const ligneBrute = etat.recherche?.lignes.find((l) => l.id === id) ?? etat.prospects[id]?.ligne;
+  const avant = etat.prospects[id] ?? {};
+  etat.prospects[id] = { ...avant, ...maj, ligne: ligneBrute ? { ...ligneBrute, id: undefined } : avant.ligne };
+  const envoyer = async () => {
+    const indic = $('#etatEnregistrement');
+    try {
+      await api(`/api/prospects/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(etat.prospects[id]) });
+      if (indic) indic.textContent = 'Enregistré ✓';
+    } catch (e) {
+      if (indic) indic.textContent = '';
+      toast(`Erreur d'enregistrement : ${e.message}`);
+    }
+  };
+  clearTimeout(minuteursSauvegarde[id]);
+  if (differe) {
+    const indic = $('#etatEnregistrement');
+    if (indic) indic.textContent = '…';
+    minuteursSauvegarde[id] = setTimeout(envoyer, 500);
+  } else {
+    envoyer();
+  }
+  majCompteur();
+}
+
+// Lien « Ajouter à Google Agenda » (1 h de rendez-vous), pour avoir aussi le rappel sur le téléphone
+function lienAgenda(l) {
+  const debut = new Date(l.rdv.date);
+  const f = (d) => `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}T${String(d.getHours()).padStart(2, '0')}${String(d.getMinutes()).padStart(2, '0')}00`;
+  const details = [l.telephone && `Tél. ${l.telephone}`, l.dirigeant?.nom && `Dirigeant : ${l.dirigeant.prenom ?? ''} ${l.dirigeant.nom}`, l.angle].filter(Boolean).join('\n');
+  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(`RDV ${l.nom}`)}`
+    + `&dates=${f(debut)}/${f(new Date(debut.getTime() + 36e5))}&location=${encodeURIComponent(l.rdv.lieu || l.adresse || '')}&details=${encodeURIComponent(details)}`;
+}
+
+function enregistrerContact(form) {
+  const id = etat.ficheId;
+  const choisi = (groupe) => $(`[data-groupe="${groupe}"] [aria-pressed="true"]`, form)?.dataset.v;
+  const resultat = RESULTATS.find((r) => r.v === choisi('resultat'));
+  if (!resultat) { toast('Choisis le résultat du contact'); return; }
+  const note = form.elements.note.value.trim();
+  const entree = { date: new Date().toISOString(), type: choisi('type'), resultat: resultat.v, note };
+  if (etat.resumeAppel?.id === id) { // compte rendu d'un appel guidé : on garde les objections pour les statistiques
+    const { objections, duree, ouverture, decideur, conversation } = etat.resumeAppel;
+    Object.assign(entree, { guide: true, objections, duree, ouverture, decideur, conversation });
+    etat.resumeAppel = null;
+  }
+  const maj = { statut: resultat.statut, relance: '' };
+
+  if (resultat.v === 'rdv') {
+    const jour = form.elements.rdvJour.value;
+    if (!jour) { toast('Indique le jour du rendez-vous'); form.elements.rdvJour.focus(); return; }
+    maj.rdv = { date: `${jour}T${form.elements.rdvHeure.value || '10:00'}`, lieu: form.elements.rdvLieu.value.trim() };
+    entree.rdv = maj.rdv.date;
+  } else if (resultat.relanceJours) {
+    maj.relance = form.elements.relance.value;
+  } else {
+    maj.rdv = null; // signé ou refus : plus de rendez-vous à rappeler
+  }
+  maj.historique = [entree, ...(etat.prospects[id]?.historique ?? [])];
+  enregistrer(id, maj);
+  rendreFiche(); rendreListes();
+  toast(resultat.v === 'rdv' ? `Rendez-vous noté : tu seras prévenu sur ce PC` : maj.relance ? `Noté. Relance prévue le ${dateCourte(maj.relance)}` : 'Contact noté');
+}
+
+$('#fiche').addEventListener('submit', (e) => {
+  e.preventDefault();
+  if (e.target.id === 'formContact') enregistrerContact(e.target);
+});
+
+$('#fiche').addEventListener('click', async (e) => {
+  const id = etat.ficheId;
+  if (e.target.closest('[data-action="fermer"]')) { fermerFiche(); return; }
+  if (e.target.closest('[data-action="appel-guide"]')) { lancerAppel(id); return; }
+  if (e.target.closest('[data-action="generer-ia"]')) { genererScriptIA(id); return; }
+  if (e.target.closest('[data-action="avis-google"]')) {
+    const zone = $('#avisGoogle');
+    const l = trouverLigne(id);
+    zone.innerHTML = '<p class="sous">Recherche des avis…</p>';
+    const r = await api('/api/avis', { method: 'POST', body: JSON.stringify({ nom: l.nom, adresse: l.adresse }) });
+    if (!r.ok) { zone.innerHTML = `<p class="message-cle ko">${esc(r.message)}</p>`; return; }
+    etat.avisRecus = r.avis;
+    zone.innerHTML = `<p class="sous" style="margin:10px 0 6px">Fiche trouvée : <strong>${esc(r.fiche)}</strong>, ${esc(r.adresse ?? '')}${r.note ? ` · ★ ${esc(String(r.note).replace('.', ','))} (${esc(r.total)} avis)` : ''}. Vérifie que c'est la bonne entreprise.</p>`
+      + (r.avis.length ? r.avis.map((a, i) => `<div class="avis-propose"><span><strong>${'★'.repeat(Math.round(a.note ?? 0))}</strong> ${esc(a.auteur)} <small>${esc(a.quand)}</small><br>${esc(a.texte)}</span>
+          <button class="btn petit" type="button" data-citer="${i}">Citer cet avis</button></div>`).join('') : '<p class="sous">Aucun avis rédigé sur cette fiche.</p>');
+    return;
+  }
+  const citer = e.target.closest('[data-citer]');
+  if (citer) {
+    const a = etat.avisRecus[Number(citer.dataset.citer)];
+    enregistrer(id, { avisCite: { texte: a.texte, auteur: a.auteur.split(' ')[0] } });
+    rendreFiche();
+    toast('Avis ajouté à ton accroche');
+    return;
+  }
+  if (e.target.closest('[data-action="noter"]')) {
+    $('#formContact').hidden = false;
+    e.target.closest('[data-action="noter"]').hidden = true;
+    $('#formContact').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    return;
+  }
+  if (e.target.closest('[data-action="annuler-contact"]')) { rendreFiche(); return; }
+  if (e.target.closest('[data-action="supprimer-rdv"]')) {
+    if (!confirm('Annuler ce rendez-vous ? Tu ne recevras plus de rappel.')) return;
+    enregistrer(id, { rdv: null });
+    rendreFiche(); rendreListes();
+    return;
+  }
+  const choix = e.target.closest('[data-groupe] button');
+  if (choix) {
+    const groupe = choix.closest('[data-groupe]');
+    $$('button', groupe).forEach((b) => b.setAttribute('aria-pressed', b === choix));
+    if (groupe.dataset.groupe === 'resultat') {
+      const r = RESULTATS.find((x) => x.v === choix.dataset.v);
+      const form = $('#formContact');
+      $('#zoneRdv').hidden = r.v !== 'rdv';
+      $('#zoneRelance').hidden = !r.relanceJours;
+      if (r.relanceJours) form.elements.relance.value = dansJours(r.relanceJours);
+      if (r.v === 'rdv' && !form.elements.rdvJour.value) form.elements.rdvJour.value = dansJours(1);
+    }
+    return;
+  }
+  const btnSite = e.target.closest('[data-site]');
+  if (btnSite) {
+    enregistrer(id, { siteManuel: btnSite.dataset.site || null });
+    rendreFiche(); rendreListes();
+    return;
+  }
+  const onglet = e.target.closest('[data-onglet]');
+  if (onglet) {
+    etat.ongletTexte = onglet.dataset.onglet;
+    $$('[data-onglet]', $('#fiche')).forEach((b) => b.setAttribute('aria-pressed', b === onglet));
+    afficherTexte(trouverLigne(id));
+    return;
+  }
+  if (e.target.closest('[data-action="copier"]')) {
+    const texte = textes(trouverLigne(id))[etat.ongletTexte];
+    try { await navigator.clipboard.writeText(texte); toast('Texte copié'); } catch { toast('Copie impossible : sélectionne le texte à la main'); }
+  }
+});
+
+$('#fiche').addEventListener('input', (e) => {
+  const id = etat.ficheId;
+  if (e.target.dataset.qualif) {
+    enregistrer(id, { qualif: { ...etat.prospects[id]?.qualif, [e.target.dataset.qualif]: e.target.checked }, statut: etat.prospects[id]?.statut || 'a-contacter' });
+    rendreFiche(); rendreListes();
+    return;
+  }
+  if (e.target.dataset.avis) {
+    enregistrer(id, { avisCite: { ...etat.prospects[id]?.avisCite, [e.target.dataset.avis]: e.target.value } }, { differe: true });
+    afficherTexte(trouverLigne(id));
+    return;
+  }
+  if (e.target.dataset.rdv) {
+    if (e.target.dataset.rdv === 'date' && !e.target.value) return;
+    enregistrer(id, { rdv: { ...etat.prospects[id]?.rdv, [e.target.dataset.rdv]: e.target.value } }, { differe: true });
+    return;
+  }
+  const champ = e.target.dataset.champ;
+  if (!champ) return;
+  const differe = champ === 'notes' || champ === 'telephone' || champ === 'email';
+  const maj = { [champ]: e.target.value };
+  // Donner une date de relance ou un téléphone = on suit ce prospect
+  if (champ !== 'statut' && e.target.value && !etat.prospects[etat.ficheId]?.statut) maj.statut = 'a-contacter';
+  enregistrer(etat.ficheId, maj, { differe });
+  if (!differe || maj.statut) {
+    if (maj.statut && champ !== 'statut') { const s = $('[data-champ="statut"]', $('#fiche')); if (s) s.value = maj.statut; }
+    rendreListes();
+  }
+});
+$('#fiche').addEventListener('change', (e) => {
+  if (e.target.dataset.champ === 'telephone' || e.target.dataset.champ === 'notes') rendreListes();
+  if (e.target.dataset.rdv) { rendreFiche(); rendreListes(); }
+});
+
+$('#voile').onclick = fermerFiche;
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && etat.ficheId && !etat.appel) fermerFiche(); });
+
+// ---------------------------------------------------------------------------------------------
+// Export Excel (CSV ; + BOM pour Excel français)
+
+function exporter(lignes, nomFichier) {
+  const entetes = ['Priorité', 'Nom', 'Catégorie', 'Adresse', 'Téléphone', 'Email', 'Note Google', 'Avis', 'Présence web', 'Site / détail',
+    'Dirigeant', 'SIRET', 'Création', 'Angle d\'attaque', 'Statut', 'Température', 'Rendez-vous', 'Relance', 'Notes', 'Dernier contact', 'Lien Google Maps'];
+  const presence = (l) => l.siteManuel === 'non' ? 'Pas de site (vérifié)' : l.siteManuel === 'oui' ? 'A un site (vérifié)'
+    : l.site?.statut === 'reseaux' ? pageReseau(l.site.url).court
+      : { oui: 'A un site', franchise: 'Franchise' }[l.site?.statut] ?? 'Aucun site trouvé';
+  const rangs = lignes.map((l) => [l.classement === 'Z' ? '-' : l.classement, l.nom, l.categorie, l.adresse, l.telephone, l.email, l.note ?? '', l.avis ?? '',
+    presence(l), l.site?.url || l.site?.source || '', l.dirigeant ? `${l.dirigeant.prenom ?? ''} ${l.dirigeant.nom}`.trim() : '',
+    l.siret, l.creation, l.angle, LABEL_STATUT[l.statut] ?? '', temperature(l)?.l.replace('🔥 ', '') ?? '',
+    l.rdv ? `${l.rdv.date.replace('T', ' ')}${l.rdv.lieu ? ` (${l.rdv.lieu})` : ''}` : '', l.relance, l.notes,
+    l.historique[0] ? `${l.historique[0].date.slice(0, 10)} ${LABEL_RESULTAT[l.historique[0].resultat] ?? ''} ${l.historique[0].note ?? ''}`.trim() : '', l.mapsUrl]);
+  const csv = '﻿' + [entetes, ...rangs].map((r) => r.map((v) => `"${String(v ?? '').replace(/"/g, '""')}"`).join(';')).join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+  a.download = nomFichier;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+$('#exporter').onclick = () => {
+  const m = etat.recherche.meta;
+  exporter(lignesFiltrees(), `prospects_${norm(m.metierLabel).replace(/\W+/g, '-')}_${norm(m.ville).replace(/\W+/g, '-')}.csv`);
+};
+$('#exporterPipeline').onclick = () => exporter(lignesPipeline(), `mes-prospects_${aujourdhui()}.csv`);
+
+// ---------------------------------------------------------------------------------------------
+// Réglages
+
+function rendreReglages() {
+  const f = $('#formProfil');
+  for (const [k, v] of Object.entries(etat.config.profil ?? {})) if (f.elements[k]) f.elements[k].value = v;
+  $('#etatCle').innerHTML = etat.config.aCleGoogle
+    ? `<span class="badge s-signe">Clé enregistrée</span> <span class="vide">${esc(etat.config.cleApercu)}</span>`
+    : '<span class="badge s-refus">Aucune clé : mode gratuit</span>';
+  $('#supprimerCle').hidden = !etat.config.aCleGoogle;
+  $('#guideCle').open = !etat.config.aCleGoogle;
+  $('#rappelsDemarrage').checked = Boolean(etat.config.rappels?.auDemarrage);
+  rendreReglagesIA();
+  rendreReglagesSmtp();
+  const { utilisees = 0, limite = 900 } = etat.config.google ?? {};
+  const part = limite ? Math.min(100, (utilisees / limite) * 100) : 100;
+  $('#jaugeGoogle').style.width = `${part}%`;
+  $('#jaugeGoogle').classList.toggle('alerte-jauge', part >= 85);
+  $('#texteJauge').textContent = `${utilisees} requête${utilisees > 1 ? 's' : ''} utilisée${utilisees > 1 ? 's' : ''} sur ${limite} ce mois-ci`
+    + ` · il en reste ${Math.max(0, limite - utilisees)} (remise à zéro le 1er du mois)`;
+  if (document.activeElement !== $('#limiteGoogle')) $('#limiteGoogle').value = limite;
+}
+
+function rendreReglagesSmtp() {
+  const s = etat.config.smtp ?? {};
+  $('#etatSmtp').innerHTML = s.configure
+    ? `<span class="badge s-signe">Boîte mail branchée</span> <span class="vide">${esc(s.utilisateur)}</span>`
+    : '<span class="badge s-refus">Non branchée : envoi depuis ta messagerie</span>';
+  $('#supprimerSmtp').hidden = !s.configure;
+  $('#guideSmtp').open = !s.configure;
+  const actif = document.activeElement;
+  const poser = (sel, v) => { if (actif !== $(sel)) $(sel).value = v ?? ''; };
+  const connu = [...$('#smtpFournisseur').options].find((o) => o.value && o.value.split('|')[0] === s.hote);
+  if (actif !== $('#smtpFournisseur') && s.hote) $('#smtpFournisseur').value = connu ? connu.value : '';
+  poser('#smtpExpediteur', s.expediteur || [etat.config.profil?.prenom, etat.config.profil?.nom].filter(Boolean).join(' '));
+  poser('#smtpUtilisateur', s.utilisateur || etat.config.profil?.email);
+  poser('#smtpHote', s.hote); poser('#smtpPort', s.port);
+  if (etat.emails) { poser('#emailsParJour', etat.emails.parJourMax ?? etat.emails.parJour); $('#monteeProgressive').checked = etat.emails.monteeProgressive !== false; } else if (!$('#emailsParJour').value) $('#emailsParJour').value = 15;
+  const autre = $('#smtpFournisseur').value === '';
+  $('#champSmtpHote').hidden = !autre; $('#champSmtpPort').hidden = !autre;
+}
+$('#smtpFournisseur').onchange = rendreReglagesSmtp;
+
+$('#enregistrerSmtp').onclick = async () => {
+  const [hotePreset, portPreset] = $('#smtpFournisseur').value.split('|');
+  const smtp = {
+    hote: hotePreset || $('#smtpHote').value.trim(), port: Number(portPreset || $('#smtpPort').value) || 465,
+    utilisateur: $('#smtpUtilisateur').value.trim(), expediteur: $('#smtpExpediteur').value.trim(), motDePasse: $('#smtpMotDePasse').value,
+  };
+  const msg = $('#messageSmtp');
+  msg.className = 'message-cle'; msg.textContent = 'Envoi du test…';
+  const test = await api('/api/emails/tester', { method: 'POST', body: JSON.stringify({ smtp }) });
+  msg.className = `message-cle ${test.ok ? 'ok' : 'ko'}`;
+  msg.textContent = test.ok ? test.message : test.erreur;
+  if (test.ok) {
+    await api('/api/config', { method: 'PUT', body: JSON.stringify({ smtp, emailsParJour: Number($('#emailsParJour').value) || 15 }) });
+    $('#smtpMotDePasse').value = '';
+    etat.emails = await api('/api/emails');
+    await chargerConfig();
+    toast('Boîte mail branchée');
+  }
+};
+
+$('#emailsParJour').onchange = async (e) => {
+  await api('/api/config', { method: 'PUT', body: JSON.stringify({ emailsParJour: Number(e.target.value) || 15 }) });
+  etat.emails = await api('/api/emails');
+  toast('Plafond quotidien enregistré');
+};
+
+$('#monteeProgressive').onchange = async (e) => {
+  await api('/api/config', { method: 'PUT', body: JSON.stringify({ monteeProgressive: e.target.checked }) });
+  etat.emails = await api('/api/emails');
+  toast(e.target.checked ? 'Montée progressive activée' : 'Montée progressive coupée : plafond complet dès maintenant');
+};
+
+$('#supprimerSmtp').onclick = async () => {
+  if (!confirm('Débrancher ta boîte mail ? Les relances automatiques s\'arrêtent ; le mot de passe est effacé de ce PC.')) return;
+  await api('/api/config', { method: 'PUT', body: JSON.stringify({ supprimerSmtp: true }) });
+  $('#messageSmtp').textContent = '';
+  await chargerConfig();
+};
+
+function rendreReglagesIA() {
+  const ia = etat.config.ia ?? {};
+  $('#etatCleIA').innerHTML = ia.aCle
+    ? `<span class="badge s-signe">Clé enregistrée</span> <span class="vide">${esc(ia.cleApercu)}</span>`
+    : '<span class="badge s-refus">Aucune clé : script IA désactivé</span>';
+  $('#supprimerCleIA').hidden = !ia.aCle;
+  $('#guideCleIA').open = !ia.aCle;
+  $('#modeleIA').innerHTML = (ia.modeles ?? []).map((m) => `<option value="${esc(m.id)}" ${m.id === ia.modele ? 'selected' : ''}>${esc(m.label)}</option>`).join('');
+  const { dollars = 0, generations = 0, limite = 5 } = ia;
+  const part = limite ? Math.min(100, (dollars / limite) * 100) : 100;
+  $('#jaugeIA').style.width = `${part}%`;
+  $('#jaugeIA').classList.toggle('alerte-jauge', part >= 85);
+  $('#texteJaugeIA').textContent = `${dollars.toFixed(2).replace('.', ',')} $ dépensés sur ${limite} $ ce mois-ci · ${generations} script${generations > 1 ? 's' : ''} généré${generations > 1 ? 's' : ''}`;
+  if (document.activeElement !== $('#limiteIA')) $('#limiteIA').value = limite;
+}
+
+$('#modeleIA').onchange = async (e) => {
+  await api('/api/config', { method: 'PUT', body: JSON.stringify({ modeleIA: e.target.value }) });
+  await chargerConfig();
+  toast('Modèle enregistré');
+};
+
+$('#enregistrerCleIA').onclick = async () => {
+  const cle = $('#cleAnthropic').value.trim();
+  const msg = $('#messageCleIA');
+  msg.className = 'message-cle'; msg.textContent = 'Test en cours…';
+  const test = await api('/api/ia/tester', { method: 'POST', body: JSON.stringify({ cle }) });
+  msg.className = `message-cle ${test.ok ? 'ok' : 'ko'}`;
+  msg.textContent = test.message;
+  if (test.ok && cle) {
+    await api('/api/config', { method: 'PUT', body: JSON.stringify({ cleAnthropic: cle }) });
+    $('#cleAnthropic').value = '';
+    toast('Clé Anthropic enregistrée');
+  }
+  await chargerConfig();
+};
+
+$('#supprimerCleIA').onclick = async () => {
+  if (!confirm('Supprimer la clé Anthropic ? Le script IA sera désactivé (les scripts déjà générés sont conservés).')) return;
+  await api('/api/config', { method: 'PUT', body: JSON.stringify({ cleAnthropic: '' }) });
+  $('#messageCleIA').textContent = '';
+  await chargerConfig();
+};
+
+$('#enregistrerLimiteIA').onclick = async () => {
+  await api('/api/config', { method: 'PUT', body: JSON.stringify({ limiteIA: Number($('#limiteIA').value) }) });
+  await chargerConfig();
+  toast('Plafond enregistré');
+};
+
+$('#rappelsDemarrage').onchange = async (e) => {
+  const r = await api('/api/rappels/demarrage', { method: 'PUT', body: JSON.stringify({ actif: e.target.checked }) });
+  e.target.checked = r.auDemarrage;
+  etat.config.rappels = { auDemarrage: r.auDemarrage };
+  toast(r.ok ? (r.auDemarrage ? 'Le Prospecteur démarrera avec Windows' : 'Démarrage avec Windows désactivé') : `Impossible : ${r.erreur}`);
+};
+
+$('#testerRappel').onclick = async () => {
+  const msg = $('#messageRappel');
+  msg.className = 'message-cle'; msg.textContent = 'Envoi…';
+  const r = await api('/api/rappels/test', { method: 'POST' });
+  msg.className = `message-cle ${r.ok ? 'ok' : 'ko'}`;
+  msg.textContent = r.ok ? 'Notification envoyée : regarde en bas à droite de ton écran.' : `Échec : ${r.erreur}`;
+};
+
+$('#arreterOutil').onclick = async () => {
+  if (!confirm('Arrêter le Prospecteur ? Tu ne recevras plus de rappels tant que tu ne l\'auras pas relancé (icône sur le Bureau).')) return;
+  await api('/api/arreter', { method: 'POST' });
+  document.body.innerHTML = '<p style="padding:48px;text-align:center;font-size:17px">Le Prospecteur est arrêté.<br>Double-clique sur l\'icône du Bureau pour le relancer.</p>';
+};
+
+$('#enregistrerLimite').onclick = async () => {
+  const valeur = Number($('#limiteGoogle').value);
+  if (valeur > 1000 && !confirm('Au-delà de 1 000 requêtes par mois, Google te facturera (environ 35 $ les 1 000). Continuer ?')) return;
+  await api('/api/config', { method: 'PUT', body: JSON.stringify({ limiteGoogle: valeur }) });
+  await chargerConfig();
+  toast('Limite enregistrée');
+};
+
+$('#formProfil').onsubmit = async (e) => {
+  e.preventDefault();
+  const profil = Object.fromEntries(new FormData(e.target));
+  await api('/api/config', { method: 'PUT', body: JSON.stringify({ profil }) });
+  etat.config.profil = profil;
+  toast('Profil enregistré');
+};
+
+$('#enregistrerCle').onclick = async () => {
+  const cle = $('#cleGoogle').value.trim();
+  const msg = $('#messageCle');
+  msg.className = 'message-cle'; msg.textContent = 'Test en cours…';
+  const test = await api('/api/config/tester-cle', { method: 'POST', body: JSON.stringify({ cle }) });
+  msg.className = `message-cle ${test.ok ? 'ok' : 'ko'}`;
+  msg.textContent = test.message;
+  if (test.ok && cle) {
+    await api('/api/config', { method: 'PUT', body: JSON.stringify({ cleGoogle: cle }) });
+    $('#cleGoogle').value = '';
+    await chargerConfig();
+    toast('Clé Google enregistrée');
+  }
+};
+
+$('#supprimerCle').onclick = async () => {
+  if (!confirm('Supprimer la clé Google ? L\'outil repassera en mode gratuit.')) return;
+  await api('/api/config', { method: 'PUT', body: JSON.stringify({ cleGoogle: '' }) });
+  $('#messageCle').textContent = '';
+  await chargerConfig();
+};
+
+async function chargerConfig() {
+  etat.config = await api('/api/config');
+  const badge = $('#modeBadge');
+  badge.classList.toggle('google', etat.config.aCleGoogle);
+  badge.lastElementChild.textContent = etat.config.aCleGoogle ? 'Google Maps connecté' : 'Mode gratuit';
+  $('#champSource').hidden = !etat.config.aCleGoogle;
+  $('#formRecherche').classList.toggle('avec-source', etat.config.aCleGoogle);
+  rendreReglages();
+}
+
+// ---------------------------------------------------------------------------------------------
+// Navigation et rendu global
+
+function rendreListes() {
+  if (etat.vue === 'recherche') rendreRecherche();
+  if (etat.vue === 'pipeline') rendrePipeline();
+  majCompteur();
+}
+
+function rendre() {
+  $$('.tab').forEach((t) => { if (t.dataset.vue === etat.vue) t.setAttribute('aria-current', 'page'); else t.removeAttribute('aria-current'); });
+  for (const v of ['recherche', 'pipeline', 'emails', 'profil', 'reglages']) $(`#vue-${v}`).hidden = etat.vue !== v;
+  rendreListes();
+  if (etat.vue === 'emails') chargerEmails();
+}
+
+$$('.tab').forEach((t) => { t.onclick = () => { etat.vue = t.dataset.vue; etat.limite = PAR_PAGE; rendre(); window.scrollTo(0, 0); }; });
+$('#formRecherche').onsubmit = lancerRecherche;
+$('#filtreSite').onclick = (e) => { const b = e.target.closest('button'); if (b) { etat.filtres.site = b.dataset.v; etat.limite = PAR_PAGE; rendreRecherche(); } };
+$('#filtrePrio').onclick = (e) => { const b = e.target.closest('button'); if (b) { etat.filtres.prio = b.dataset.v; etat.limite = PAR_PAGE; rendreRecherche(); } };
+$('#filtreCategorie').onchange = (e) => { etat.filtres.categorie = e.target.value; etat.limite = PAR_PAGE; rendreRecherche(); };
+$('#filtreTexte').oninput = (e) => { etat.filtres.texte = e.target.value; etat.limite = PAR_PAGE; rendreRecherche(); };
+$('#filtreStatut').onclick = (e) => { const b = e.target.closest('button'); if (b) { etat.filtresPipeline.statut = b.dataset.v; rendrePipeline(); } };
+$('#filtreTextePipeline').oninput = (e) => { etat.filtresPipeline.texte = e.target.value; rendrePipeline(); };
+brancherTableau($('#tableauRecherche'));
+brancherTableau($('#tableauPipeline'));
+
+$('#recentes').addEventListener('click', async (e) => {
+  const suppr = e.target.closest('[data-suppr]');
+  if (suppr) {
+    e.stopPropagation();
+    if (!confirm('Supprimer cette recherche enregistrée ? (Tes statuts et notes sont conservés.)')) return;
+    await api(`/api/recherches/${encodeURIComponent(suppr.dataset.suppr)}`, { method: 'DELETE' });
+    if (etat.recherche?.id === suppr.dataset.suppr) etat.recherche = null;
+    etat.recentes = await api('/api/recherches');
+    rendre();
+    return;
+  }
+  const puce = e.target.closest('.puce');
+  if (puce) chargerRecherche(puce.dataset.id);
+});
+$('#recentes').addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target.classList.contains('puce')) chargerRecherche(e.target.dataset.id); });
+
+// Démarrage
+(async function demarrer() {
+  try {
+    const [metiers, prospects, recentes] = await Promise.all([api('/api/metiers'), api('/api/prospects'), api('/api/recherches'), chargerConfig()]);
+    $('#metier').innerHTML = '<option value="tous">Tous les métiers</option>' + metiers.map((m) => `<option value="${esc(m.cle)}">${esc(m.label)}</option>`).join('');
+    etat.prospects = prospects;
+    etat.recentes = recentes;
+    if (recentes[0]) await chargerRecherche(recentes[0].id);
+    else rendre();
+    appliquerLien();
+    chargerEmails().then(rendreReglagesSmtp); // pour que Réglages affiche le vrai plafond quotidien, pas la valeur par défaut
+  } catch (e) {
+    $('#alertes').innerHTML = `<div class="alerte erreur">Impossible de joindre le serveur : ${esc(e.message)}. Relance LANCER.bat.</div>`;
+  }
+})();
+</script>
+</body>
+</html>

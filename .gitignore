@@ -1,0 +1,5 @@
+# Données personnelles : prospects, emails, réglages (clés API, mot de passe de messagerie), journal
+donnees/
+
+node_modules/
+*.log
